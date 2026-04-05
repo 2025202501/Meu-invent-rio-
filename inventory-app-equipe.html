@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Inventário</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* ===== LOGIN / TEAM SCREEN ===== */
+        #loginScreen {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 90vh;
+        }
+        .login-box {
+            background: white; border-radius: 20px; padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 420px; text-align: center;
+        }
+        .login-box h2 { color: #667eea; font-size: 1.8em; margin-bottom: 8px; }
+        .login-box p { color: #888; margin-bottom: 25px; font-size: 0.95em; }
+        .member-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .member-btn {
+            padding: 14px 20px; background: #f5f5ff; border: 2px solid #667eea;
+            border-radius: 10px; cursor: pointer; font-size: 1em; color: #333;
+            transition: all 0.2s; text-align: left; display: flex; align-items: center; gap: 10px;
+        }
+        .member-btn:hover { background: #667eea; color: white; transform: translateX(4px); }
+        .member-btn .avatar { width: 36px; height: 36px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1em; flex-shrink: 0; }
+        .member-btn:hover .avatar { background: white; color: #667eea; }
+        .no-members { color: #aaa; font-style: italic; padding: 20px; }
+
+        /* ===== HEADER ===== */
+        .header { background: white; padding: 20px 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header-left h1 { color: #667eea; font-size: 2em; }
+        .header-left p { color: #666; margin-top: 4px; }
+        .user-badge { background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95em; border: none; }
+        .user-badge:hover { background: #5568d3; }
+
+        /* ===== STATS ===== */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card h3 { color: #666; font-size: 0.9em; margin-bottom: 10px; text-transform: uppercase; }
+        .stat-card .number { font-size: 2.5em; font-weight: bold; color: #667eea; }
+
+        /* ===== CONTROLS ===== */
+        .controls { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .search-box { flex: 1; min-width: 250px; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 12px 20px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; }
+        input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #667eea; }
+        .filter-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        button { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1em; transition: all 0.3s; font-weight: 600; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-secondary:hover { background: #e0e0e0; }
+        .btn-secondary.active { background: #667eea; color: white; }
+        .btn-success { background: #4caf50; color: white; }
+        .btn-success:hover { background: #45a049; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-danger:hover { background: #da190b; }
+        .btn-edit { background: #ff9800; color: white; }
+        .btn-edit:hover { background: #f57c00; }
+        .btn-location { background: #2196F3; color: white; }
+        .btn-location:hover { background: #1976D2; }
+        .btn-team { background: #764ba2; color: white; }
+        .btn-team:hover { background: #6a3f92; }
+        .btn-log { background: #009688; color: white; }
+        .btn-log:hover { background: #00796b; }
+        .btn-small { padding: 8px 16px; font-size: 0.9em; flex: 1; }
+
+        /* ===== GRID ===== */
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .product-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .product-photo { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; background: #f0f0f0; }
+        .product-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; }
+        .product-name { font-size: 1.2em; font-weight: bold; color: #333; }
+        .stock-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; }
+        .stock-low { background: #fee; color: #c00; }
+        .stock-medium { background: #fff4e6; color: #f90; }
+        .stock-high { background: #e8f5e9; color: #2e7d32; }
+        .product-info { margin: 15px 0; }
+        .info-row { display: flex; justify-content: space-between; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .info-label { color: #666; font-size: 0.9em; }
+        .info-value { font-weight: 600; color: #333; font-size: 0.9em; }
+        .product-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .last-change { background: #f0f7ff; border-radius: 6px; padding: 8px 10px; margin-top: 10px; font-size: 0.8em; color: #555; border-left: 3px solid #667eea; }
+        .location-info { background: #e3f2fd; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.9em; }
+        .location-info strong { color: #1976D2; }
+        .view-codes-btn { margin-top: 10px; padding: 8px 16px; background: #764ba2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; width: 100%; }
+        .view-codes-btn:hover { background: #6a3f92; }
+
+        /* ===== MODAL ===== */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal-content-wide { max-width: 680px; }
+        .modal-header { font-size: 1.5em; font-weight: bold; margin-bottom: 20px; color: #333; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #666; font-weight: 600; }
+        .form-group input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
+        .file-upload { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+        .file-upload input[type="file"] { position: absolute; left: -9999px; }
+        .file-upload label { display: block; padding: 12px; background: #f0f0f0; border: 2px dashed #667eea; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s; }
+        .file-upload label:hover { background: #e8e8ff; }
+        .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 10px; display: none; }
+        .photo-preview.show { display: block; }
+
+        /* ===== TEAM MANAGEMENT ===== */
+        .team-member-row { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; }
+        .team-avatar { width: 40px; height: 40px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .team-member-info { flex: 1; }
+        .team-member-name { font-weight: 600; color: #333; }
+        .team-member-role { font-size: 0.8em; color: #888; }
+        .team-add-form { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .team-add-form input { flex: 1; min-width: 150px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; }
+        .team-add-form select { padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; }
+        .team-count { font-size: 0.85em; color: #888; margin-bottom: 10px; }
+        .role-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: bold; }
+        .role-admin { background: #fce4ec; color: #c62828; }
+        .role-operator { background: #e8f5e9; color: #2e7d32; }
+        .role-viewer { background: #e3f2fd; color: #1565c0; }
+        .btn-remove { background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
+        .btn-remove:hover { background: #f44336; color: white; }
+
+        /* ===== LOG ===== */
+        .log-entry { padding: 12px; border-radius: 8px; margin-bottom: 8px; background: #f9f9f9; border-left: 4px solid #667eea; font-size: 0.9em; }
+        .log-entry.log-add { border-left-color: #4caf50; }
+        .log-entry.log-remove { border-left-color: #f44336; }
+        .log-entry.log-edit { border-left-color: #ff9800; }
+        .log-entry.log-new { border-left-color: #667eea; }
+        .log-meta { font-size: 0.8em; color: #999; margin-top: 4px; }
+        .log-user { font-weight: 700; color: #667eea; }
+
+        /* ===== CODES ===== */
+        #codesModal .modal-content { max-width: 600px; }
+        .codes-display { display: flex; flex-direction: column; gap: 25px; margin-top: 20px; }
+        .code-box { padding: 20px; background: #f9f9f9; border-radius: 10px; text-align: center; }
+        .code-box h3 { margin-bottom: 15px; color: #333; }
+        .codes-section { display: flex; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f0f0; }
+        .code-container { flex: 1; text-align: center; }
+        .code-container h4 { font-size: 0.85em; color: #666; margin-bottom: 10px; }
+
+        /* ===== TOP BUTTONS ===== */
+        .top-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5em !important; }
+            .product-actions { grid-template-columns: 1fr 1fr; }
+            .top-actions button { font-size: 0.85em; padding: 10px 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div id="loginScreen">
+        <div class="login-box">
+            <div style="font-size: 3em; margin-bottom: 10px;">📦</div>
+            <h2>Controle de Inventário</h2>
+            <p>Selecione seu nome para entrar</p>
+            <div class="member-list" id="memberList"></div>
+            <div style="margin-top: 20px; font-size: 0.8em; color: #bbb;">
+                Apenas membros da equipe podem acessar o sistema
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN APP (hidden until login) ===== -->
+    <div id="mainApp" style="display:none;">
+        <div class="header">
+            <div class="header-left">
+                <h1>📦 Controle de Inventário</h1>
+                <p style="color: #666; margin-top: 4px;">Sistema de gerenciamento de estoque</p>
+            </div>
+            <button class="user-badge" onclick="openProfileMenu()">
+                👤 <span id="currentUserName">--</span> ▾
+            </button>
+        </div>
+
+        <div class="top-actions">
+            <button class="btn-team" onclick="openTeamModal()">👥 Gerenciar Equipe</button>
+            <button class="btn-log" onclick="openLogModal()">📋 Histórico de Alterações</button>
+            <button class="btn-primary" onclick="openAddModal()">+ Adicionar Produto</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><h3>Total de Produtos</h3><div class="number" id="totalProducts">0</div></div>
+            <div class="stat-card"><h3>Valor Total</h3><div class="number" id="totalValue">R$ 0</div></div>
+            <div class="stat-card"><h3>Estoque Baixo</h3><div class="number" id="lowStock">0</div></div>
+            <div class="stat-card"><h3>Itens em Estoque</h3><div class="number" id="totalItems">0</div></div>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar produto...">
+            </div>
+            <div class="filter-buttons">
+                <button class="btn-secondary active" onclick="filterStock('all', event)">Todos</button>
+                <button class="btn-secondary" onclick="filterStock('low', event)">Estoque Baixo</button>
+                <button class="btn-secondary" onclick="filterStock('medium', event)">Estoque Médio</button>
+                <button class="btn-secondary" onclick="filterStock('high', event)">Estoque Alto</button>
+            </div>
+        </div>
+
+        <div class="inventory-grid" id="inventoryGrid"></div>
+    </div>
+</div>
+
+<!-- ===== ADJUST STOCK MODAL ===== -->
+<div class="modal" id="adjustModal">
+    <div class="modal-content">
+        <div class="modal-header" id="modalTitle">Ajustar Estoque</div>
+        <div class="form-group">
+            <label>Produto:</label>
+            <input type="text" id="modalProductName" readonly>
+        </div>
+        <div class="form-group">
+            <label>Quantidade:</label>
+            <input type="number" id="modalQuantity" min="1" value="1">
+        </div>
+        <div class="form-group">
+            <label>Motivo (opcional):</label>
+            <input type="text" id="modalReason" placeholder="Ex: Compra, Venda, Ajuste...">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" style="flex:1" onclick="closeModal()">Cancelar</button>
+            <button class="btn-primary" style="flex:1" onclick="saveAdjustment()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ADD PRODUCT MODAL ===== -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <div class="modal-header">Adicionar Novo Produto</div>
+        <div class="form-group"><label>Nome do Produto:</label><input type="text" id="newProductName" placeholder="Ex: Mouse Gamer RGB"></div>
+        <div class="form-group"><label>Categoria:</label><input type="text" id="newCategory" placeholder="Ex: Periféricos"></div>
+        <div class="form-group"><label>Quantidade:</label><input type="number" id="newQuantity" min="0" value="0"></div>
+        <div class="form-group"><label>Preço (R$):</label><input type="number" id="newPrice" min="0" step="0.01" value="0"></div>
+        <div class="form-group"><label>Fornecedor:</label><input type="text" id="newSupplier" placeholder="Ex: TechDistribuidor"></div>
+        <div class="form-group"><label>Estoque Mínimo:</label><input type="number" id="newMinStock" min="0" value="10"></div>
+        <div class="form-group"><label>Código de Barras:</label><input type="text" id="newBarcode" placeholder="Ex: 123456789012" maxlength="20"></div>
+        <div class="form-group">
+            <label>Localização:</label>
+            <input type="text" id="newLocationAddress" placeholder="Ex: Armazém Central - São Paulo">
+            <button type="button" class="btn-location" style="margin-top:10px;width:100%;" onclick="getCurrentLocation('new')">📍 Capturar Localização Atual (GPS)</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                <input type="number" id="newLocationLat" placeholder="Latitude" step="0.000001" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;">
+                <input type="number" id="newLocationLng" placeholder="Longitude" step="0.000001" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;">
+            </div>
+            <div id="newLocationPreview" style="margin-top:10px;font-size:0.9em;color:#666;"></div>
+        </div>
+        <div class="form-group">
+            <label>Foto do Produto:</label>
+            <div class="file-upload">
+                <input type="file" id="newPhoto" accept="image/*" onchange="previewPhoto(event)">
+                <label for="newPhoto">📷 Clique para adicionar foto</label>
+            </div>
+            <img id="photoPreview" class="photo-preview" alt="Preview">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" style="flex:1" onclick="closeAddModal()">Cancelar</button>
+            <button class="btn-primary" style="flex:1" onclick="saveNewProduct()">Adicionar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== EDIT PRODUCT MODAL ===== -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">Editar Produto</div>
+        <div class="form-group"><label>Nome do Produto:</label><input type="text" id="editProductName" placeholder="Nome do produto"></div>
+        <div class="form-group"><label>Categoria:</label><input type="text" id="editCategory" placeholder="Categoria"></div>
+        <div class="form-group"><label>Quantidade:</label><input type="number" id="editQuantity" min="0" value="0"></div>
+        <div class="form-group"><label>Preço (R$):</label><input type="number" id="editPrice" min="0" step="0.01" value="0"></div>
+        <div class="form-group"><label>Fornecedor:</label><input type="text" id="editSupplier" placeholder="Fornecedor"></div>
+        <div class="form-group"><label>Estoque Mínimo:</label><input type="number" id="editMinStock" min="0" value="10"></div>
+        <div class="form-group"><label>Código de Barras:</label><input type="text" id="editBarcode" placeholder="Ex: 123456789012" maxlength="20"></div>
+        <div class="form-group">
+            <label>Localização:</label>
+            <input type="text" id="editLocationAddress" placeholder="Ex: Armazém Central">
+            <button type="button" class="btn-location" style="margin-top:10px;width:100%;" onclick="getCurrentLocation('edit')">📍 Capturar Localização Atual (GPS)</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                <input type="number" id="editLocationLat" placeholder="Latitude" step="0.000001" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;">
+                <input type="number" id="editLocationLng" placeholder="Longitude" step="0.000001" style="padding:10px;border:2px solid #e0e0e0;border-radius:8px;">
+            </div>
+            <div id="editLocationPreview" style="margin-top:10px;font-size:0.9em;color:#666;"></div>
+        </div>
+        <div class="form-group">
+            <label>Foto do Produto:</label>
+            <div class="file-upload">
+                <input type="file" id="editPhoto" accept="image/*" onchange="previewEditPhoto(event)">
+                <label for="editPhoto">📷 Clique para alterar foto</label>
+            </div>
+            <img id="editPhotoPreview" class="photo-preview" alt="Preview">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" style="flex:1" onclick="closeEditModal()">Cancelar</button>
+            <button class="btn-primary" style="flex:1" onclick="saveEditProduct()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CODES MODAL ===== -->
+<div class="modal" id="codesModal">
+    <div class="modal-content">
+        <div class="modal-header" id="codesModalTitle">Códigos do Produto</div>
+        <div class="codes-display">
+            <div class="code-box"><h3>📊 Código de Barras</h3><svg id="barcodeDisplay"></svg></div>
+            <div class="code-box"><h3>📱 QR Code</h3><div id="qrcodeDisplay"></div></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" style="flex:1" onclick="closeCodesModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TEAM MODAL ===== -->
+<div class="modal" id="teamModal">
+    <div class="modal-content modal-content-wide">
+        <div class="modal-header">👥 Gerenciar Equipe</div>
+        <div class="team-count" id="teamCount">0 / 10 membros</div>
+        <div id="teamList"></div>
+        <div id="teamAddSection">
+            <hr style="margin:15px 0; border-color:#f0f0f0;">
+            <strong style="color:#333;">Adicionar membro:</strong>
+            <div class="team-add-form" style="margin-top:10px;">
+                <input type="text" id="newMemberName" placeholder="Nome completo" style="flex:2;">
+                <select id="newMemberRole" style="flex:1;">
+                    <option value="operator">Operador</option>
+                    <option value="admin">Administrador</option>
+                    <option value="viewer">Visualizador</option>
+                </select>
+                <button class="btn-primary" onclick="addTeamMember()">+ Adicionar</button>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" style="flex:1" onclick="closeTeamModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== LOG MODAL ===== -->
+<div class="modal" id="logModal">
+    <div class="modal-content modal-content-wide">
+        <div class="modal-header">📋 Histórico de Alterações</div>
+        <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+            <select id="logFilterUser" onchange="renderLog()" style="padding:8px;border:2px solid #e0e0e0;border-radius:8px;font-size:0.9em;flex:1;">
+                <option value="">Todos os usuários</option>
+            </select>
+            <button class="btn-danger" style="padding:8px 16px;font-size:0.9em;" onclick="clearLog()">🗑️ Limpar</button>
+        </div>
+        <div id="logList" style="max-height:400px;overflow-y:auto;"></div>
+        <div class="modal-actions">
+            <button class="btn-primary" style="flex:1" onclick="closeLogModal()">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== PROFILE MENU MODAL ===== -->
+<div class="modal" id="profileModal">
+    <div class="modal-content" style="max-width:320px;text-align:center;">
+        <div style="font-size:3em;margin-bottom:10px;">👤</div>
+        <div style="font-size:1.3em;font-weight:bold;margin-bottom:5px;" id="profileName"></div>
+        <div style="font-size:0.9em;color:#888;margin-bottom:20px;" id="profileRole"></div>
+        <div class="modal-actions" style="flex-direction:column;">
+            <button class="btn-danger" style="width:100%" onclick="logout()">🚪 Sair / Trocar usuário</button>
+            <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeProfileMenu()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let currentUser = null;
+let currentFilter = 'all';
+let currentProduct = null;
+let isAdding = false;
+let editingProductId = null;
+let capturedLocation = { new: null, edit: null };
+
+let team = JSON.parse(localStorage.getItem('inv_team') || '[]');
+// Seed default admin if empty
+if (team.length === 0) {
+    team = [{ id: 1, name: 'Administrador', role: 'admin' }];
+    saveTeam();
+}
+
+let changeLog = JSON.parse(localStorage.getItem('inv_log') || '[]');
+
+let inventory = JSON.parse(localStorage.getItem('inv_data') || 'null');
+if (!inventory) {
+    inventory = [
+        { id: 1, name: 'Notebook Dell Inspiron', category: 'Eletrônicos', quantity: 45, price: 3500, supplier: 'TechDistribuidor', minStock: 20, barcode: '123456789012', photo: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400', location: { lat: -23.5505, lng: -46.6333, address: 'Armazém Central - São Paulo' }, lastChange: null },
+        { id: 2, name: 'Mouse Logitech MX Master', category: 'Periféricos', quantity: 120, price: 450, supplier: 'Logitech Brasil', minStock: 50, barcode: '234567890123', photo: 'https://images.unsplash.com/photo-1527814050087-3793815479db?w=400', location: { lat: -23.5505, lng: -46.6333, address: 'Armazém Central - São Paulo' }, lastChange: null },
+        { id: 3, name: 'Teclado Mecânico Razer', category: 'Periféricos', quantity: 15, price: 650, supplier: 'GameStore', minStock: 25, barcode: '345678901234', photo: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400', location: { lat: -23.5629, lng: -46.6544, address: 'Depósito Oeste - São Paulo' }, lastChange: null },
+        { id: 4, name: 'Monitor LG 27"', category: 'Eletrônicos', quantity: 30, price: 1200, supplier: 'LG Electronics', minStock: 15, barcode: '456789012345', photo: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400', location: { lat: -23.5505, lng: -46.6333, address: 'Armazém Central - São Paulo' }, lastChange: null },
+        { id: 5, name: 'Cadeira Gamer DXRacer', category: 'Móveis', quantity: 8, price: 1800, supplier: 'Móveis Office', minStock: 10, barcode: '567890123456', photo: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=400', location: { lat: -23.5629, lng: -46.6544, address: 'Depósito Oeste - São Paulo' }, lastChange: null },
+        { id: 6, name: 'Webcam Logitech C920', category: 'Periféricos', quantity: 65, price: 380, supplier: 'Logitech Brasil', minStock: 30, barcode: '678901234567', photo: 'https://images.unsplash.com/photo-1587826080692-f439cd0b70da?w=400', location: { lat: -23.5505, lng: -46.6333, address: 'Armazém Central - São Paulo' }, lastChange: null },
+        { id: 7, name: 'Headset HyperX Cloud', category: 'Áudio', quantity: 42, price: 320, supplier: 'GameStore', minStock: 20, barcode: '789012345678', photo: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400', location: { lat: -23.5381, lng: -46.6256, address: 'Loja Centro - São Paulo' }, lastChange: null },
+        { id: 8, name: 'SSD Samsung 1TB', category: 'Armazenamento', quantity: 88, price: 520, supplier: 'Samsung BR', minStock: 40, barcode: '890123456789', photo: 'https://images.unsplash.com/photo-1531492746076-161ca9bcad58?w=400', location: { lat: -23.5505, lng: -46.6333, address: 'Armazém Central - São Paulo' }, lastChange: null },
+        { id: 9, name: 'Memória RAM 16GB DDR4', category: 'Hardware', quantity: 5, price: 280, supplier: 'TechDistribuidor', minStock: 30, barcode: '901234567890', photo: 'https://images.unsplash.com/photo-1562976540-1502c2145186?w=400', location: { lat: -23.5629, lng: -46.6544, address: 'Depósito Oeste - São Paulo' }, lastChange: null },
+        { id: 10, name: 'Placa de Vídeo RTX 3060', category: 'Hardware', quantity: 12, price: 2800, supplier: 'Nvidia Partner', minStock: 8, barcode: '012345678901', photo: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400', location: { lat: -23.5381, lng: -46.6256, address: 'Loja Centro - São Paulo' }, lastChange: null },
+        { id: 11, name: 'Roteador TP-Link AC1200', category: 'Redes', quantity: 55, price: 180, supplier: 'TP-Link Brasil', minStock: 25, barcode: '123450987654', photo: 'https://images.unsplash.com/photo-1606904825846-647eb07f5be2?w=400', location: { lat: -23.5505, lng: -46.6333, address: 'Armazém Central - São Paulo' }, lastChange: null },
+        { id: 12, name: 'Impressora HP LaserJet', category: 'Impressoras', quantity: 18, price: 1500, supplier: 'HP Brasil', minStock: 10, barcode: '234561098765', photo: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=400', location: { lat: -23.5629, lng: -46.6544, address: 'Depósito Oeste - São Paulo' }, lastChange: null }
+    ];
+    saveInventory();
+}
+
+// ============================================================
+//  PERSISTENCE
+// ============================================================
+function saveInventory() { localStorage.setItem('inv_data', JSON.stringify(inventory)); }
+function saveTeam() { localStorage.setItem('inv_team', JSON.stringify(team)); }
+function saveLog() { localStorage.setItem('inv_log', JSON.stringify(changeLog)); }
+
+// ============================================================
+//  LOGIN
+// ============================================================
+function renderLoginScreen() {
+    const list = document.getElementById('memberList');
+    if (team.length === 0) {
+        list.innerHTML = '<div class="no-members">Nenhum membro cadastrado.<br>Configure a equipe antes de usar.</div>';
+        return;
+    }
+    list.innerHTML = team.map(m => `
+        <button class="member-btn" onclick="loginAs(${m.id})">
+            <div class="avatar">${m.name.charAt(0).toUpperCase()}</div>
+            <div>
+                <div style="font-weight:600;">${m.name}</div>
+                <div style="font-size:0.8em;color:#aaa;">${roleLabel(m.role)}</div>
+            </div>
+        </button>
+    `).join('');
+}
+
+function loginAs(memberId) {
+    currentUser = team.find(m => m.id === memberId);
+    if (!currentUser) return;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('currentUserName').textContent = currentUser.name;
+    renderInventory();
+}
+
+function logout() {
+    currentUser = null;
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    closeProfileMenu();
+    renderLoginScreen();
+}
+
+// ============================================================
+//  PROFILE MENU
+// ============================================================
+function openProfileMenu() {
+    document.getElementById('profileName').textContent = currentUser.name;
+    document.getElementById('profileRole').textContent = roleLabel(currentUser.role);
+    document.getElementById('profileModal').classList.add('active');
+}
+function closeProfileMenu() { document.getElementById('profileModal').classList.remove('active'); }
+
+// ============================================================
+//  TEAM MANAGEMENT
+// ============================================================
+function roleLabel(role) {
+    return { admin: 'Administrador', operator: 'Operador', viewer: 'Visualizador' }[role] || role;
+}
+function roleBadgeClass(role) {
+    return { admin: 'role-admin', operator: 'role-operator', viewer: 'role-viewer' }[role] || '';
+}
+
+function openTeamModal() {
+    renderTeamList();
+    document.getElementById('teamModal').classList.add('active');
+}
+function closeTeamModal() { document.getElementById('teamModal').classList.remove('active'); }
+
+function renderTeamList() {
+    document.getElementById('teamCount').textContent = `${team.length} / 10 membros`;
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    document.getElementById('teamAddSection').style.display = (isAdmin && team.length < 10) ? 'block' : (team.length >= 10 ? 'none' : (!isAdmin ? 'none' : 'block'));
+    if (!isAdmin) document.getElementById('teamAddSection').style.display = 'none';
+
+    document.getElementById('teamList').innerHTML = team.map(m => `
+        <div class="team-member-row">
+            <div class="team-avatar">${m.name.charAt(0).toUpperCase()}</div>
+            <div class="team-member-info">
+                <div class="team-member-name">${m.name}</div>
+                <span class="role-badge ${roleBadgeClass(m.role)}">${roleLabel(m.role)}</span>
+            </div>
+            ${isAdmin && m.id !== currentUser.id ? `<button class="btn-remove" onclick="removeTeamMember(${m.id})">✕ Remover</button>` : ''}
+        </div>
+    `).join('') || '<div style="color:#aaa;text-align:center;padding:20px;">Nenhum membro ainda.</div>';
+
+    if (team.length >= 10) {
+        document.getElementById('teamAddSection').innerHTML = '<div style="color:#f90;text-align:center;padding:10px;background:#fff8e1;border-radius:8px;">⚠️ Limite de 10 membros atingido</div>';
+    }
+}
+
+function addTeamMember() {
+    if (!currentUser || currentUser.role !== 'admin') { alert('Apenas administradores podem adicionar membros!'); return; }
+    if (team.length >= 10) { alert('Limite máximo de 10 membros atingido!'); return; }
+    const name = document.getElementById('newMemberName').value.trim();
+    const role = document.getElementById('newMemberRole').value;
+    if (!name) { alert('Digite o nome do membro!'); return; }
+    const newMember = { id: Date.now(), name, role };
+    team.push(newMember);
+    saveTeam();
+    document.getElementById('newMemberName').value = '';
+    renderTeamList();
+    renderLoginScreen();
+    addLogEntry('team', `Membro adicionado: ${name} (${roleLabel(role)})`);
+}
+
+function removeTeamMember(memberId) {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    const member = team.find(m => m.id === memberId);
+    if (!member) return;
+    if (!confirm(`Remover ${member.name} da equipe?`)) return;
+    team = team.filter(m => m.id !== memberId);
+    saveTeam();
+    renderTeamList();
+    renderLoginScreen();
+    addLogEntry('team', `Membro removido: ${member.name}`);
+}
+
+// ============================================================
+//  CHANGE LOG
+// ============================================================
+function addLogEntry(type, description) {
+    const entry = {
+        id: Date.now(),
+        type,
+        description,
+        user: currentUser ? currentUser.name : 'Sistema',
+        timestamp: new Date().toISOString()
+    };
+    changeLog.unshift(entry);
+    if (changeLog.length > 200) changeLog = changeLog.slice(0, 200);
+    saveLog();
+}
+
+function openLogModal() {
+    renderLog();
+    document.getElementById('logModal').classList.add('active');
+}
+function closeLogModal() { document.getElementById('logModal').classList.remove('active'); }
+
+function renderLog() {
+    // Populate user filter
+    const sel = document.getElementById('logFilterUser');
+    const selectedUser = sel.value;
+    const users = [...new Set(changeLog.map(e => e.user))];
+    sel.innerHTML = '<option value="">Todos os usuários</option>' + users.map(u => `<option value="${u}" ${u === selectedUser ? 'selected' : ''}>${u}</option>`).join('');
+
+    let filtered = changeLog;
+    if (selectedUser) filtered = filtered.filter(e => e.user === selectedUser);
+
+    const typeIcon = { add: '➕', remove: '➖', edit: '✏️', new: '🆕', team: '👥', delete: '🗑️' };
+    const typeClass = { add: 'log-add', remove: 'log-remove', edit: 'log-edit', new: 'log-new' };
+
+    if (filtered.length === 0) {
+        document.getElementById('logList').innerHTML = '<div style="color:#aaa;text-align:center;padding:30px;">Nenhum registro encontrado.</div>';
+        return;
+    }
+
+    document.getElementById('logList').innerHTML = filtered.map(e => {
+        const d = new Date(e.timestamp);
+        const dateStr = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return `<div class="log-entry ${typeClass[e.type] || ''}">
+            ${typeIcon[e.type] || '📝'} ${e.description}
+            <div class="log-meta">por <span class="log-user">${e.user}</span> • ${dateStr}</div>
+        </div>`;
+    }).join('');
+}
+
+function clearLog() {
+    if (!currentUser || currentUser.role !== 'admin') { alert('Apenas administradores podem limpar o histórico!'); return; }
+    if (!confirm('Limpar todo o histórico de alterações?')) return;
+    changeLog = [];
+    saveLog();
+    renderLog();
+}
+
+// ============================================================
+//  INVENTORY RENDER
+// ============================================================
+function getStockStatus(qty, min) {
+    if (qty <= min) return 'low';
+    if (qty <= min * 2) return 'medium';
+    return 'high';
+}
+function getStockLabel(s) { return { low: 'Baixo', medium: 'Médio', high: 'Alto' }[s]; }
+
+function renderInventory() {
+    const grid = document.getElementById('inventoryGrid');
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = inventory.filter(p => {
+        const match = p.name.toLowerCase().includes(searchTerm) ||
+                      p.category.toLowerCase().includes(searchTerm) ||
+                      p.supplier.toLowerCase().includes(searchTerm);
+        if (currentFilter === 'all') return match;
+        return match && getStockStatus(p.quantity, p.minStock) === currentFilter;
+    });
+
+    const canEdit = currentUser && (currentUser.role === 'admin' || currentUser.role === 'operator');
+
+    grid.innerHTML = filtered.map(p => {
+        const status = getStockStatus(p.quantity, p.minStock);
+        const total = p.quantity * p.price;
+        const lastChg = p.lastChange ? `<div class="last-change">🕐 Última alteração: <strong>${p.lastChange.user}</strong> — ${p.lastChange.action} ${p.lastChange.qty} un. em ${new Date(p.lastChange.time).toLocaleDateString('pt-BR')}</div>` : '';
+        const actionBtns = canEdit ? `
+            <button class="btn-small btn-edit" onclick="editProduct(${p.id})">✏️ Editar</button>
+            <button class="btn-small btn-success" onclick="adjustStock(${p.id}, 'add')">+ Adicionar</button>
+            <button class="btn-small btn-danger" onclick="adjustStock(${p.id}, 'remove')">- Remover</button>
+        ` : `<div style="grid-column:1/-1;text-align:center;color:#aaa;font-size:0.85em;">👁️ Modo visualização</div>`;
+
+        return `<div class="product-card">
+            ${p.photo ? `<img src="${p.photo}" alt="${p.name}" class="product-photo" onerror="this.style.display='none'">` : ''}
+            <div class="product-header">
+                <div class="product-name">${p.name}</div>
+                <div class="stock-badge stock-${status}">${getStockLabel(status)}</div>
+            </div>
+            <div class="product-info">
+                <div class="info-row"><span class="info-label">Categoria:</span><span class="info-value">${p.category}</span></div>
+                <div class="info-row"><span class="info-label">Quantidade:</span><span class="info-value">${p.quantity} unidades</span></div>
+                <div class="info-row"><span class="info-label">Preço unitário:</span><span class="info-value">R$ ${p.price.toFixed(2)}</span></div>
+                <div class="info-row"><span class="info-label">Valor total:</span><span class="info-value">R$ ${total.toFixed(2)}</span></div>
+                <div class="info-row"><span class="info-label">Fornecedor:</span><span class="info-value">${p.supplier}</span></div>
+                <div class="info-row"><span class="info-label">Estoque mínimo:</span><span class="info-value">${p.minStock}</span></div>
+            </div>
+            ${p.location ? `<div class="location-info">📍 <strong>Localização:</strong><br>${p.location.address}</div>` : ''}
+            ${lastChg}
+            ${p.barcode ? `<button class="view-codes-btn" onclick="viewCodes(${p.id})">🔍 Ver Códigos</button>` : ''}
+            <div class="product-actions">${actionBtns}</div>
+        </div>`;
+    }).join('');
+
+    updateStats();
+}
+
+function updateStats() {
+    const total = inventory.reduce((s, p) => s + p.quantity * p.price, 0);
+    const low = inventory.filter(p => getStockStatus(p.quantity, p.minStock) === 'low').length;
+    const items = inventory.reduce((s, p) => s + p.quantity, 0);
+    document.getElementById('totalProducts').textContent = inventory.length;
+    document.getElementById('totalValue').textContent = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    document.getElementById('lowStock').textContent = low;
+    document.getElementById('totalItems').textContent = items.toLocaleString('pt-BR');
+}
+
+function filterStock(filter, event) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-buttons .btn-secondary').forEach(b => b.classList.remove('active'));
+    if (event && event.target) event.target.classList.add('active');
+    renderInventory();
+}
+
+// ============================================================
+//  ADJUST STOCK
+// ============================================================
+function adjustStock(productId, action) {
+    if (!currentUser || currentUser.role === 'viewer') { alert('⚠️ Você não tem permissão para alterar o estoque.\nApenas Administradores e Operadores podem fazer isso.'); return; }
+    currentProduct = inventory.find(p => p.id === productId);
+    isAdding = action === 'add';
+    document.getElementById('modalTitle').textContent = isAdding ? '➕ Adicionar ao Estoque' : '➖ Remover do Estoque';
+    document.getElementById('modalProductName').value = currentProduct.name;
+    document.getElementById('modalQuantity').value = 1;
+    document.getElementById('modalReason').value = '';
+    document.getElementById('adjustModal').classList.add('active');
+}
+
+function closeModal() { document.getElementById('adjustModal').classList.remove('active'); currentProduct = null; }
+
+function saveAdjustment() {
+    const qty = parseInt(document.getElementById('modalQuantity').value);
+    const reason = document.getElementById('modalReason').value.trim();
+    if (!qty || qty < 1) { alert('Informe uma quantidade válida!'); return; }
+
+    const action = isAdding ? 'adicionou' : 'removeu';
+    if (isAdding) {
+        currentProduct.quantity += qty;
+    } else {
+        if (qty > currentProduct.quantity) { alert('Quantidade a remover maior que o estoque atual!'); return; }
+        currentProduct.quantity -= qty;
+    }
+
+    currentProduct.lastChange = { user: currentUser.name, action, qty, time: new Date().toISOString() };
+
+    const desc = `${isAdding ? 'Adicionou' : 'Removeu'} ${qty} un. de "${currentProduct.name}"${reason ? ' — ' + reason : ''}`;
+    addLogEntry(isAdding ? 'add' : 'remove', desc);
+
+    saveInventory();
+    closeModal();
+    renderInventory();
+}
+
+// ============================================================
+//  ADD PRODUCT
+// ============================================================
+function openAddModal() {
+    if (!currentUser || currentUser.role === 'viewer') { alert('Você não tem permissão para adicionar produtos.'); return; }
+    document.getElementById('addModal').classList.add('active');
+    ['newProductName','newCategory','newSupplier','newBarcode','newLocationAddress'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('newQuantity').value = '0';
+    document.getElementById('newPrice').value = '0';
+    document.getElementById('newMinStock').value = '10';
+    document.getElementById('newLocationLat').value = '';
+    document.getElementById('newLocationLng').value = '';
+    document.getElementById('newPhoto').value = '';
+    document.getElementById('photoPreview').classList.remove('show');
+    document.getElementById('newLocationPreview').innerHTML = '';
+    capturedLocation.new = null;
+}
+function closeAddModal() { document.getElementById('addModal').classList.remove('active'); }
+
+function previewPhoto(event) {
+    const file = event.target.files[0];
+    if (file) { const r = new FileReader(); r.onload = e => { const pv = document.getElementById('photoPreview'); pv.src = e.target.result; pv.classList.add('show'); }; r.readAsDataURL(file); }
+}
+
+function saveNewProduct() {
+    const name = document.getElementById('newProductName').value.trim();
+    const category = document.getElementById('newCategory').value.trim();
+    const quantity = parseInt(document.getElementById('newQuantity').value) || 0;
+    const price = parseFloat(document.getElementById('newPrice').value) || 0;
+    const supplier = document.getElementById('newSupplier').value.trim();
+    const minStock = parseInt(document.getElementById('newMinStock').value) || 10;
+    const barcode = document.getElementById('newBarcode').value.trim();
+    const locationAddress = document.getElementById('newLocationAddress').value.trim();
+    const manualLat = parseFloat(document.getElementById('newLocationLat').value);
+    const manualLng = parseFloat(document.getElementById('newLocationLng').value);
+
+    if (!name) { alert('Preencha o nome do produto!'); return; }
+    if (!category) { alert('Preencha a categoria!'); return; }
+    if (!supplier) { alert('Preencha o fornecedor!'); return; }
+
+    const preview = document.getElementById('photoPreview');
+    const photo = preview.classList.contains('show') ? preview.src : null;
+    let location = null;
+    if (locationAddress) {
+        const lat = capturedLocation.new ? capturedLocation.new.lat : (!isNaN(manualLat) ? manualLat : -23.5505);
+        const lng = capturedLocation.new ? capturedLocation.new.lng : (!isNaN(manualLng) ? manualLng : -46.6333);
+        location = { lat, lng, address: locationAddress };
+    }
+
+    const newProduct = { id: Math.max(...inventory.map(p => p.id), 0) + 1, name, category, quantity, price, supplier, minStock, barcode: barcode || null, photo, location, lastChange: null };
+    inventory.push(newProduct);
+    addLogEntry('new', `Novo produto cadastrado: "${name}" (qtd: ${quantity})`);
+    saveInventory();
+    closeAddModal();
+    renderInventory();
+    alert(`Produto "${name}" adicionado com sucesso! 🎉`);
+}
+
+// ============================================================
+//  EDIT PRODUCT
+// ============================================================
+function editProduct(productId) {
+    if (!currentUser || currentUser.role === 'viewer') { alert('Você não tem permissão para editar produtos.'); return; }
+    editingProductId = productId;
+    const p = inventory.find(x => x.id === productId);
+    if (!p) return;
+    document.getElementById('editProductName').value = p.name;
+    document.getElementById('editCategory').value = p.category;
+    document.getElementById('editQuantity').value = p.quantity;
+    document.getElementById('editPrice').value = p.price;
+    document.getElementById('editSupplier').value = p.supplier;
+    document.getElementById('editMinStock').value = p.minStock;
+    document.getElementById('editBarcode').value = p.barcode || '';
+    document.getElementById('editLocationAddress').value = p.location ? p.location.address : '';
+    document.getElementById('editLocationLat').value = p.location ? p.location.lat : '';
+    document.getElementById('editLocationLng').value = p.location ? p.location.lng : '';
+    const preview = document.getElementById('editPhotoPreview');
+    if (p.photo) { preview.src = p.photo; preview.classList.add('show'); } else { preview.classList.remove('show'); }
+    document.getElementById('editLocationPreview').innerHTML = '';
+    capturedLocation.edit = p.location ? { lat: p.location.lat, lng: p.location.lng } : null;
+    document.getElementById('editModal').classList.add('active');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('active'); editingProductId = null; }
+
+function previewEditPhoto(event) {
+    const file = event.target.files[0];
+    if (file) { const r = new FileReader(); r.onload = e => { const pv = document.getElementById('editPhotoPreview'); pv.src = e.target.result; pv.classList.add('show'); }; r.readAsDataURL(file); }
+}
+
+function saveEditProduct() {
+    const p = inventory.find(x => x.id === editingProductId);
+    if (!p) return;
+    const name = document.getElementById('editProductName').value.trim();
+    const category = document.getElementById('editCategory').value.trim();
+    const quantity = parseInt(document.getElementById('editQuantity').value) || 0;
+    const price = parseFloat(document.getElementById('editPrice').value) || 0;
+    const supplier = document.getElementById('editSupplier').value.trim();
+    const minStock = parseInt(document.getElementById('editMinStock').value) || 10;
+    const barcode = document.getElementById('editBarcode').value.trim();
+    const locationAddress = document.getElementById('editLocationAddress').value.trim();
+    const manualLat = parseFloat(document.getElementById('editLocationLat').value);
+    const manualLng = parseFloat(document.getElementById('editLocationLng').value);
+
+    if (!name) { alert('Preencha o nome do produto!'); return; }
+    if (!category) { alert('Preencha a categoria!'); return; }
+    if (!supplier) { alert('Preencha o fornecedor!'); return; }
+
+    const preview = document.getElementById('editPhotoPreview');
+    p.name = name; p.category = category; p.quantity = quantity; p.price = price;
+    p.supplier = supplier; p.minStock = minStock; p.barcode = barcode || null;
+    if (preview.classList.contains('show')) p.photo = preview.src;
+
+    if (locationAddress) {
+        const lat = capturedLocation.edit ? capturedLocation.edit.lat : (!isNaN(manualLat) ? manualLat : (p.location ? p.location.lat : -23.5505));
+        const lng = capturedLocation.edit ? capturedLocation.edit.lng : (!isNaN(manualLng) ? manualLng : (p.location ? p.location.lng : -46.6333));
+        p.location = { lat, lng, address: locationAddress };
+    } else { p.location = null; }
+
+    p.lastChange = { user: currentUser.name, action: 'editou', qty: quantity, time: new Date().toISOString() };
+    addLogEntry('edit', `Editou produto "${name}"`);
+    saveInventory();
+    closeEditModal();
+    renderInventory();
+    alert('Produto atualizado com sucesso! ✅');
+}
+
+// ============================================================
+//  GPS / LOCATION
+// ============================================================
+function getCurrentLocation(mode) {
+    if (!navigator.geolocation) { alert('Geolocalização não suportada pelo navegador.'); return; }
+    const previewId = mode === 'new' ? 'newLocationPreview' : 'editLocationPreview';
+    const latId = mode === 'new' ? 'newLocationLat' : 'editLocationLat';
+    const lngId = mode === 'new' ? 'newLocationLng' : 'editLocationLng';
+    document.getElementById(previewId).innerHTML = '🔄 Capturando localização...';
+    navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        capturedLocation[mode] = { lat, lng };
+        document.getElementById(latId).value = lat.toFixed(6);
+        document.getElementById(lngId).value = lng.toFixed(6);
+        document.getElementById(previewId).innerHTML = `✅ <strong>Localização capturada!</strong><br>Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}<br>Precisão: ${pos.coords.accuracy.toFixed(0)}m`;
+    }, err => {
+        document.getElementById(previewId).innerHTML = '❌ Não foi possível obter a localização. Insira manualmente.';
+    }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+// ============================================================
+//  CODES
+// ============================================================
+function viewCodes(productId) {
+    const p = inventory.find(x => x.id === productId);
+    if (!p || !p.barcode) { alert('Produto sem código de barras!'); return; }
+    document.getElementById('codesModalTitle').textContent = `Códigos — ${p.name}`;
+    document.getElementById('codesModal').classList.add('active');
+    setTimeout(() => {
+        const barcodeEl = document.getElementById('barcodeDisplay');
+        const qrEl = document.getElementById('qrcodeDisplay');
+        barcodeEl.innerHTML = ''; qrEl.innerHTML = '';
+        try { if (typeof JsBarcode !== 'undefined') JsBarcode(barcodeEl, p.barcode, { format: 'CODE128', displayValue: true, fontSize: 16, width: 2, height: 80, margin: 10 }); } catch(e) {}
+        try { if (typeof QRCode !== 'undefined') new QRCode(qrEl, { text: p.barcode, width: 200, height: 200, colorDark: '#667eea', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H }); } catch(e) {}
+    }, 200);
+}
+function closeCodesModal() { document.getElementById('codesModal').classList.remove('active'); }
+
+// ============================================================
+//  INIT
+// ============================================================
+document.getElementById('searchInput').addEventListener('input', renderInventory);
+renderLoginScreen();
+</script>
+</body>
+</html>
