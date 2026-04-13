@@ -1,0 +1,41 @@
+{
+  "name": "AgroCall — Sistema de Chamados",
+  "short_name": "AgroCall",
+  "description": "Sistema de chamados para frota agrícola — colhedoras, transbordos e tratores culturais",
+  "start_url": "./agrocall.html",
+  "display": "standalone",
+  "background_color": "#f4f4f0",
+  "theme_color": "#1D9E75",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Novo chamado",
+      "short_name": "Novo",
+      "description": "Abrir um novo chamado",
+      "url": "./agrocall.html#novo"
+    },
+    {
+      "name": "Ver abertos",
+      "short_name": "Abertos",
+      "description": "Ver chamados em aberto",
+      "url": "./agrocall.html#abertos"
+    }
+  ]
+}

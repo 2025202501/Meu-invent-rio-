@@ -1,0 +1,3 @@
+# Netlify Redirects — SPA fallback para MSAL redirect flow
+/agrocall.html  /agrocall.html  200
+/*              /agrocall.html  200

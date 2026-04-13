@@ -1,0 +1,15 @@
+# Netlify Headers — libera MSAL e Microsoft Graph
+
+/*
+  Content-Security-Policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://www.gstatic.com https://login.microsoftonline.com https://graph.microsoft.com https://login.live.com https://aadcdn.msftauth.net https://aadcdn.msauth.net https://*.tile.openstreetmap.org https://nominatim.openstreetmap.org https://www.openstreetmap.org https://*.firebaseio.com https://*.googleapis.com data: blob:
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=*
+
+/agrocall.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /

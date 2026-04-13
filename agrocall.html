@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AgroCall — Sistema de Chamados</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1D9E75">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AgroCall">
+<!-- Ícone para iOS (splash) -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- Cor de fundo enquanto carrega -->
+<meta name="msapplication-TileColor" content="#1D9E75">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f0; color: #1a1a1a; font-size: 14px; }
+  :root {
+    --verde: #1D9E75; --verde-light: #E1F5EE; --verde-dark: #0F6E56;
+    --amber: #BA7517; --amber-light: #FAEEDA;
+    --red: #E24B4A; --red-light: #FCEBEB; --red-dark: #A32D2D;
+    --blue: #378ADD; --blue-light: #E6F1FB; --blue-dark: #185FA5;
+    --bg: #f4f4f0; --card: #ffffff; --border: #e2e2dc;
+    --text: #1a1a1a; --muted: #6b6b65;
+  }
+  .app { max-width: 960px; margin: 0 auto; padding: 1rem; }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); flex-wrap: wrap; gap: 10px; }
+  .logo-row { display: flex; align-items: center; gap: 10px; }
+  .logo-box { width: 40px; height: 40px; background: var(--verde); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .logo-box svg { width: 22px; height: 22px; fill: white; }
+  .hdr-h1 { font-size: 18px; font-weight: 700; }
+  .hdr-sub { font-size: 12px; color: var(--muted); }
+  .sync { font-size: 11px; color: var(--verde); background: var(--verde-light); padding: 4px 10px; border-radius: 20px; }
+  .btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text); transition: all .15s; }
+  .btn:hover { background: #f0efe9; }
+  .btn-green { background: var(--verde); color: white; border-color: var(--verde-dark); }
+  .btn-green:hover { background: var(--verde-dark); }
+  .btn-red { background: var(--red); color: white; border-color: var(--red-dark); }
+  .btn-red:hover { background: var(--red-dark); }
+  .btn-amber { background: var(--amber-light); color: #854F0B; border-color: var(--amber); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 2px; }
+  .tab { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); white-space: nowrap; }
+  .tab.on { background: var(--verde); color: white; border-color: var(--verde-dark); }
+  .panel { display: none; }
+  .panel.on { display: block; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .card-hd { font-size: 14px; font-weight: 700; margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1rem; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-val { font-size: 28px; font-weight: 700; }
+  .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .fg { display: flex; flex-direction: column; gap: 5px; }
+  .fg label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .fg input, .fg select, .fg textarea { padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border); background: #fafaf8; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+  .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--verde); box-shadow: 0 0 0 3px rgba(29,158,117,.1); background: white; }
+  .fg textarea { min-height: 90px; resize: vertical; }
+  .fg input[readonly] { background: var(--bg); color: var(--muted); }
+  .tbg { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .tbtn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: #fafaf8; font-size: 13px; cursor: pointer; color: var(--muted); display: flex; align-items: center; gap: 6px; font-weight: 500; transition: all .15s; }
+  .tbtn.sm { background: var(--amber-light); color: #854F0B; border-color: var(--amber); }
+  .tbtn.se { background: var(--blue-light); color: var(--blue-dark); border-color: var(--blue); }
+  .tbtn.sc { background: var(--verde-light); color: var(--verde-dark); border-color: var(--verde); }
+  .tbtn.sh { background: #dbeafe; color: #1e3a8a; border-color: #93c5fd; }
+  .pbg { display: flex; gap: 8px; margin-top: 4px; }
+  .pbtn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: #fafaf8; font-size: 13px; cursor: pointer; color: var(--muted); font-weight: 600; transition: all .15s; }
+  .pbtn.pa { background: var(--red-light); color: var(--red-dark); border-color: var(--red); }
+  .pbtn.pm { background: var(--amber-light); color: #854F0B; border-color: var(--amber); }
+  .pbtn.pb { background: var(--verde-light); color: var(--verde-dark); border-color: var(--verde); }
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .ba { background: var(--red-light); color: var(--red-dark); }
+  .band { background: var(--amber-light); color: #854F0B; }
+  .bf { background: var(--verde-light); color: var(--verde-dark); }
+  .bm { background: var(--amber-light); color: #854F0B; }
+  .be { background: var(--blue-light); color: var(--blue-dark); }
+  .bc { background: var(--verde-light); color: var(--verde-dark); }
+  .bh { background: #dbeafe; color: #1e3a8a; }
+  .balt { background: var(--red-light); color: var(--red-dark); }
+  .bmed { background: var(--amber-light); color: #854F0B; }
+  .bbai { background: var(--verde-light); color: var(--verde-dark); }
+  .ccard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; transition: border-color .15s; }
+  .ccard:hover { border-color: #aaa; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .ccard.urg { border-left: 3px solid var(--red); }
+  .cc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .cc-frota { font-size: 15px; font-weight: 700; }
+  .cc-bgs { display: flex; gap: 5px; flex-wrap: wrap; }
+  .cc-desc { font-size: 13px; color: var(--muted); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-meta { display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .cc-ft { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+  .timer-live { font-size: 13px; font-weight: 700; color: var(--red); display: flex; align-items: center; gap: 5px; }
+  .dot { width: 7px; height: 7px; background: var(--red); border-radius: 50%; animation: bl 1s ease-in-out infinite; }
+  @keyframes bl { 0%,100%{opacity:1}50%{opacity:.2} }
+  .ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-start; justify-content: center; z-index: 200; padding: 1.5rem 1rem; overflow-y: auto; }
+  .modal { background: var(--card); border-radius: 14px; padding: 1.5rem; width: 100%; max-width: 600px; border: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+  .mhd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .mtit { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .mclose { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--muted); padding: 2px 7px; border-radius: 6px; }
+  .mclose:hover { background: var(--bg); }
+  .mft { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; padding-top: 12px; border-top: 1px solid var(--border); }
+  .dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .dl { font-size: 11px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .04em; }
+  .dv { font-size: 13px; font-weight: 600; }
+  .big-t { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .04em; margin: 4px 0 14px; }
+  .eq-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(175px,1fr)); gap: 8px; }
+  .mcard { background: #fafaf8; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+  .av { width: 38px; height: 38px; border-radius: 50%; background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: var(--verde-dark); flex-shrink: 0; }
+  .mn { font-size: 13px; font-weight: 700; }
+  .mc { font-size: 11px; color: var(--muted); }
+  .mt { font-size: 11px; color: var(--muted); }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+  .srch { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; outline: none; margin-bottom: 12px; }
+  .srch:focus { border-color: var(--verde); }
+  @media(max-width:640px){
+    .frow{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr 1fr}
+    .dgrid{grid-template-columns:1fr}
+    .header{flex-direction:column;align-items:flex-start}
+    #charts-row2{grid-template-columns:1fr !important}
+  }
+
+  /* LOGIN */
+  #login-screen { position:fixed; inset:0; background:#f4f4f0; display:flex; align-items:center; justify-content:center; z-index:999; padding:1rem; }
+  .login-box { background:#fff; border:1px solid var(--border); border-radius:16px; padding:2.5rem 2rem; width:100%; max-width:400px; box-shadow:0 4px 24px rgba(0,0,0,.1); text-align:center; }
+  .login-logo { width:56px; height:56px; background:var(--verde); border-radius:14px; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; }
+  .login-logo svg { width:30px; height:30px; fill:white; }
+  .login-h1 { font-size:22px; font-weight:800; margin-bottom:6px; }
+  .login-sub { font-size:13px; color:var(--muted); margin-bottom:2rem; }
+  .login-sep { display:flex; align-items:center; gap:10px; margin:1.25rem 0; color:var(--muted); font-size:12px; }
+  .login-sep::before,.login-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+  .ms-btn { width:100%; padding:12px 16px; border-radius:10px; border:1px solid var(--border); background:#fff; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all .15s; color:var(--text); }
+  .ms-btn:hover { background:#f5f5f5; border-color:#aaa; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+  .ms-icon { width:22px; height:22px; flex-shrink:0; }
+  .local-btn { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); margin-top:10px; transition:all .15s; }
+  .local-btn:hover { background:#eaeae4; color:var(--text); }
+  .user-pill { display:flex; align-items:center; gap:8px; background:var(--verde-light); color:var(--verde-dark); border-radius:20px; padding:5px 12px 5px 6px; font-size:12px; font-weight:600; cursor:pointer; }
+  .user-av { width:24px; height:24px; border-radius:50%; background:var(--verde); color:white; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; }
+  .logout-btn { background:none; border:none; cursor:pointer; font-size:11px; color:var(--muted); text-decoration:underline; padding:0; }
+  .logout-btn:hover { color:var(--red); }
+
+  /* PDF button */
+  .btn-pdf { background:#fff; color:#185FA5; border-color:#378ADD; }
+  .btn-pdf:hover { background:#E6F1FB; }
+
+  /* Print styles */
+  @media print {
+    body { background:white !important; }
+    #login-screen, .header, .tabs, .btn, button, .ov { display:none !important; }
+    .panel { display:block !important; }
+    #panel-dash,#panel-ab,#panel-an,#panel-eq { display:none !important; }
+    #panel-hi { display:block !important; }
+    .card { box-shadow:none !important; border:1px solid #ccc !important; break-inside:avoid; }
+    canvas { max-width:100% !important; }
+  }
+
+  /* GPS spin animation */
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+  /* Safe area notch/home bar */
+  body { padding-top:env(safe-area-inset-top); }
+
+  /* Banner instalar Android */
+  #install-banner { display:none; position:fixed; bottom:1.2rem; left:50%; transform:translateX(-50%); z-index:998; background:#1a1a1a; color:white; border-radius:14px; padding:12px 14px; font-size:13px; font-weight:600; align-items:center; gap:10px; box-shadow:0 4px 24px rgba(0,0,0,.35); max-width:360px; width:calc(100% - 2rem); animation:slideUp .3s ease; }
+  @keyframes slideUp { from{transform:translateX(-50%) translateY(20px);opacity:0} to{transform:translateX(-50%) translateY(0);opacity:1} }
+  #install-banner.show { display:flex; }
+  .ib-icon { width:38px;height:38px;background:var(--verde);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .ib-icon svg { width:22px;height:22px;fill:white; }
+  .ib-text { flex:1; }
+  .ib-title { font-size:13px;font-weight:700;margin-bottom:1px; }
+  .ib-sub { font-size:11px;opacity:.65; }
+  .ib-btn { background:var(--verde);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0; }
+  .ib-x { background:none;border:none;color:rgba(255,255,255,.4);font-size:20px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1; }
+
+  /* Dica iOS */
+  #ios-hint { display:none; position:fixed; bottom:1.2rem; left:50%; transform:translateX(-50%); z-index:998; background:#1a1a1a; color:white; border-radius:14px; padding:16px 18px 14px; font-size:12px; max-width:310px; width:calc(100% - 2rem); text-align:center; line-height:1.7; box-shadow:0 4px 24px rgba(0,0,0,.35); }
+  #ios-hint.show { display:block; }
+  #ios-hint strong { color:#5acfa0; }
+  .ih-x { background:none;border:none;color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;position:absolute;top:8px;right:12px; }
+  #ios-hint { position:fixed; }
+</style>
+</head>
+<body>
+<!-- TELA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+    </div>
+    <div class="login-h1">AgroCall</div>
+    <div class="login-sub">Sistema de chamados — frota agrícola</div>
+
+    <!-- Aviso se Client ID não configurado -->
+    <div id="ms-setup-warn" style="display:none;background:#FAEEDA;border:1px solid #BA7517;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#854F0B;text-align:left;line-height:1.6">
+      <strong>⚠️ Configure seu App ID Microsoft</strong><br>
+      Para usar OneDrive, abra o arquivo <code>agrocall.html</code> num editor e altere a linha:<br>
+      <code style="background:rgba(0,0,0,.08);padding:2px 5px;border-radius:4px">MS_CLIENT_ID = 'SEU_CLIENT_ID'</code><br>
+      <a href="#" onclick="document.getElementById('setup-steps').style.display=document.getElementById('setup-steps').style.display==='none'?'block':'none';return false" style="color:#854F0B;font-weight:700">Ver como criar o App ID ▾</a>
+      <div id="setup-steps" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.1)">
+        1. Acesse <a href="https://portal.azure.com" target="_blank" style="color:#854F0B">portal.azure.com</a><br>
+        2. <b>Azure Active Directory → App registrations → New registration</b><br>
+        3. Nome: <b>AgroCall</b> | Tipo: <b>Accounts in any org + personal</b><br>
+        4. Redirect URI: <b>Single-page application (SPA)</b> → cole a URL do seu site<br>
+        5. Após criar, copie o <b>Application (client) ID</b><br>
+        6. Cole no arquivo onde está <code>SEU_CLIENT_ID</code>
+      </div>
+    </div>
+
+    <button class="ms-btn" id="btn-ms-login" onclick="loginMicrosoft()">
+      <svg class="ms-icon" viewBox="0 0 23 23">
+        <rect x="1" y="1" width="10" height="10" fill="#f25022"/>
+        <rect x="12" y="1" width="10" height="10" fill="#7fba00"/>
+        <rect x="1" y="12" width="10" height="10" fill="#00a4ef"/>
+        <rect x="12" y="12" width="10" height="10" fill="#ffb900"/>
+      </svg>
+      Entrar com Microsoft / OneDrive
+    </button>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px">Conta pessoal, corporativa ou escolar</div>
+
+    <div class="login-sep">ou</div>
+    <button class="local-btn" onclick="loginLocal()">Continuar sem login (modo local)</button>
+
+    <div style="margin-top:1.2rem;font-size:11px;color:var(--muted);line-height:1.6">
+      Com Microsoft: dados salvos no <b>OneDrive</b> e acessíveis em qualquer celular.
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
+
+<div class="header">
+  <div class="logo-row">
+    <div class="logo-box"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div>
+    <div><div class="hdr-h1">AgroCall</div><div class="hdr-sub">Sistema de chamados — frota agrícola</div></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <div id="user-area"></div>
+    <span class="sync" id="syncLbl">&#8635; Sincronizando...</span>
+    <button class="btn btn-green" onclick="openModal('nv')">+ Novo chamado</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="goTab('dash',0)">Dashboard</button>
+  <button class="tab" onclick="goTab('ab',1)">Abertos <span id="cnt-a" style="opacity:.7"></span></button>
+  <button class="tab" onclick="goTab('an',2)">Em andamento <span id="cnt-n" style="opacity:.7"></span></button>
+  <button class="tab" onclick="goTab('hi',3)">Histórico</button>
+  <button class="tab" onclick="goTab('eq',4)">Equipe</button>
+</div>
+
+<div id="panel-dash" class="panel on">
+  <div class="stats">
+    <div class="stat"><div class="stat-lbl">Abertos</div><div class="stat-val" id="s-a" style="color:var(--red)">0</div></div>
+    <div class="stat"><div class="stat-lbl">Em andamento</div><div class="stat-val" id="s-n" style="color:var(--amber)">0</div></div>
+    <div class="stat"><div class="stat-lbl">Fechados hoje</div><div class="stat-val" id="s-f" style="color:var(--verde)">0</div></div>
+    <div class="stat"><div class="stat-lbl">Tempo médio (min)</div><div class="stat-val" id="s-t">—</div></div>
+  </div>
+  <div class="card"><div class="card-hd">Chamados recentes</div><div id="d-list"></div></div>
+</div>
+<div id="panel-ab" class="panel"><div id="l-ab"></div></div>
+<div id="panel-an" class="panel"><div id="l-an"></div></div>
+<div id="panel-hi" class="panel">
+
+  <!-- Estatísticas do histórico -->
+  <div class="stats" id="hi-stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="stat-lbl">Total encerrados</div><div class="stat-val" id="hi-total" style="color:var(--verde)">0</div></div>
+    <div class="stat"><div class="stat-lbl">Tempo médio parado (min)</div><div class="stat-val" id="hi-avgpar">—</div></div>
+    <div class="stat"><div class="stat-lbl">Tempo médio atendimento (min)</div><div class="stat-val" id="hi-avgat">—</div></div>
+  </div>
+
+  <!-- Gráfico: Tempo de parada por chamado/frota -->
+  <div class="card">
+    <div class="card-hd">
+      <span>Tempo de parada por equipamento (min)</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" id="btn-chart-par" onclick="setChartMode('parada')" style="background:var(--red-light);color:var(--red-dark);border-color:var(--red)">Parada</button>
+        <button class="btn btn-sm" id="btn-chart-at" onclick="setChartMode('atendimento')">Atendimento</button>
+      </div>
+    </div>
+    <div style="position:relative;height:260px">
+      <canvas id="chart-barras"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráfico: Tempo por técnico -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem" id="charts-row2">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hd">Atendimentos por técnico</div>
+      <div style="position:relative;height:220px">
+        <canvas id="chart-pizza"></canvas>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-hd">Tempo médio por técnico (min)</div>
+      <div style="position:relative;height:220px">
+        <canvas id="chart-tec"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico: Chamados por tipo de problema -->
+  <div class="card">
+    <div class="card-hd">Tipo de problema × Tempo médio de parada (min)</div>
+    <div style="position:relative;height:200px">
+      <canvas id="chart-tipo"></canvas>
+    </div>
+  </div>
+
+  <!-- Lista de chamados -->
+  <div class="card">
+    <div class="card-hd">
+      <span>Chamados encerrados</span>
+      <button class="btn btn-sm btn-pdf" onclick="exportarPDF()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+        Exportar PDF
+      </button>
+    </div>
+    <div id="l-hi"></div>
+  </div>
+</div>
+<div id="panel-eq" class="panel">
+  <div class="card">
+    <div class="card-hd">
+      <span>Equipe técnica <span id="eq-ct" style="font-size:12px;font-weight:400;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:20px">0/100</span></span>
+      <button class="btn btn-sm" onclick="openModal('mb')">+ Adicionar membro</button>
+    </div>
+    <input class="srch" id="eq-s" placeholder="Buscar por nome ou cargo..." oninput="renderEq()">
+    <div class="eq-grid" id="eq-grid"></div>
+  </div>
+</div>
+</div>
+
+</div><!-- /main-app -->
+
+<!-- MODAL NOVO CHAMADO -->
+<div class="ov" id="ov-nv" style="display:none" onclick="if(event.target===this)closeModal('nv')">
+<div class="modal">
+  <div class="mhd">
+    <div class="mtit"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--red)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>Abrir chamado</div>
+    <button class="mclose" onclick="closeModal('nv')">&times;</button>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>Tipo de equipamento *</label>
+      <select id="n-eq"><option value="">Selecione...</option><option>Colhedora</option><option>Transbordo</option><option>Trator cultural</option></select>
+    </div>
+    <div class="fg"><label>Frota / identificação *</label><input id="n-fr" placeholder="Ex: COL-01, TRB-03, TR-15"></div>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>Operador responsável</label><input id="n-op" placeholder="Nome do operador"></div>
+    <div class="fg">
+      <label>Talhão / localização</label>
+      <div style="display:flex;gap:6px;align-items:stretch">
+        <input id="n-lc" placeholder="Ex: Talhão 3A, Gleba Norte" style="flex:1;min-width:0">
+        <button type="button" id="btn-gps" onclick="capturarGPS()" title="Usar localização atual"
+          style="padding:0 11px;border-radius:8px;border:1px solid var(--verde);background:var(--verde-light);color:var(--verde-dark);cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;transition:all .15s">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+          GPS
+        </button>
+      </div>
+      <!-- Status GPS -->
+      <div id="gps-status" style="display:none;margin-top:5px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px"></div>
+      <!-- Mini mapa -->
+      <div id="gps-map-wrap" style="display:none;margin-top:8px;border-radius:8px;overflow:hidden;border:1px solid var(--border);position:relative">
+        <iframe id="gps-map" style="width:100%;height:180px;border:none;display:block" loading="lazy"></iframe>
+        <div id="gps-coords-badge" style="position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.65);color:white;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;font-variant-numeric:tabular-nums"></div>
+        <button onclick="limparGPS()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">✕ Limpar</button>
+      </div>
+    </div>
+  </div>
+  <div class="fg" style="margin-bottom:12px">
+    <label>Tipo de problema *</label>
+    <div class="tbg">
+      <button class="tbtn" id="tb-m" onclick="selTp('m')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>Mecânico</button>
+      <button class="tbtn" id="tb-e" onclick="selTp('e')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>Eletrônico</button>
+      <button class="tbtn" id="tb-c" onclick="selTp('c')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>Climático</button>
+      <button class="tbtn" id="tb-h" onclick="selTp('h')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/></svg>Hidráulico</button>
+    </div>
+  </div>
+  <div class="fg" style="margin-bottom:12px">
+    <label>Prioridade *</label>
+    <div class="pbg">
+      <button class="pbtn" id="pb-a" onclick="selPr('a')">Alta</button>
+      <button class="pbtn" id="pb-m" onclick="selPr('m')">Média</button>
+      <button class="pbtn" id="pb-b" onclick="selPr('b')">Baixa</button>
+    </div>
+  </div>
+  <div class="fg" style="margin-bottom:12px">
+    <label>Técnico responsável</label>
+    <select id="n-tc"></select>
+  </div>
+  <div class="fg" style="margin-bottom:12px">
+    <label>Descrição detalhada do problema *</label>
+    <textarea id="n-ds" placeholder="Descreva o problema: sintomas, barulhos, códigos de erro, quando ocorreu, frequência..."></textarea>
+  </div>
+  <div class="frow">
+    <div class="fg"><label>Previsão de liberação</label><input type="datetime-local" id="n-pv"></div>
+    <div class="fg"><label>Data/hora abertura</label><input id="n-dt" readonly></div>
+  </div>
+  <div class="mft">
+    <button class="btn" onclick="closeModal('nv')">Cancelar</button>
+    <button class="btn btn-green" onclick="criarChamado()">Abrir chamado</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL DETALHE -->
+<div class="ov" id="ov-dt" style="display:none" onclick="if(event.target===this)closeModal('dt')">
+<div class="modal">
+  <div class="mhd">
+    <div class="mtit" id="dt-tit">Detalhes</div>
+    <button class="mclose" onclick="closeModal('dt')">&times;</button>
+  </div>
+  <div class="dgrid" id="dt-inf"></div>
+  <div style="background:#fafaf8;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Descrição</div>
+    <div style="font-size:13px" id="dt-desc"></div>
+  </div>
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Tempo de parada</div>
+    <div class="big-t" id="dt-tmr" style="color:var(--red)">00:00:00</div>
+  </div>
+  <div class="fg" id="sol-area" style="margin-bottom:12px">
+    <label>Solução aplicada</label>
+    <textarea id="dt-sol" placeholder="Descreva detalhadamente o que foi feito para resolver o problema..."></textarea>
+  </div>
+  <div class="mft">
+    <button class="btn" onclick="closeModal('dt')">Fechar</button>
+    <button class="btn btn-amber" id="btn-ass" onclick="assumir()" style="display:none">Assumir chamado</button>
+    <button class="btn btn-red" id="btn-enc" onclick="encerrar()" style="display:none">Encerrar chamado</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL MEMBRO -->
+<div class="ov" id="ov-mb" style="display:none" onclick="if(event.target===this)closeModal('mb')">
+<div class="modal" style="max-width:420px">
+  <div class="mhd">
+    <div class="mtit">Adicionar membro</div>
+    <button class="mclose" onclick="closeModal('mb')">&times;</button>
+  </div>
+  <div class="fg" style="margin-bottom:12px"><label>Nome completo *</label><input id="m-nm" placeholder="Nome completo"></div>
+  <div class="fg" style="margin-bottom:12px">
+    <label>Cargo</label>
+    <select id="m-cg">
+      <option>Técnico mecânico</option><option>Técnico eletrônico</option><option>Técnico hidráulico</option>
+      <option>Operador de colhedora</option><option>Operador de transbordo</option><option>Operador de trator</option>
+      <option>Supervisor de campo</option><option>Gerente de frota</option><option>Engenheiro agrícola</option>
+    </select>
+  </div>
+  <div class="fg" style="margin-bottom:12px"><label>Telefone / WhatsApp</label><input id="m-tl" placeholder="(00) 00000-0000"></div>
+  <div class="mft">
+    <button class="btn" onclick="closeModal('mb')">Cancelar</button>
+    <button class="btn btn-green" onclick="addMembro()">Adicionar</button>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/msal.js/2.38.3/msal-browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+<script>
+// ============================================================
+// MICROSOFT LOGIN + ONEDRIVE — MSAL.js + Microsoft Graph API
+//
+// COMO CONFIGURAR NO NETLIFY (1 vez só):
+//
+// PASSO 1 — Registrar app no Azure:
+//   1. Acesse https://portal.azure.com (conta Microsoft gratuita serve)
+//   2. Busque "App registrations" → New registration
+//   3. Nome: AgroCall
+//   4. Tipos de conta: "Accounts in any org + personal Microsoft accounts"
+//   5. Redirect URI: escolha "Single-page application (SPA)"
+//      Cole sua URL do Netlify: https://SEU-SITE.netlify.app/agrocall.html
+//   6. Clique Register → copie o Application (client) ID
+//
+// PASSO 2 — Colar o ID aqui:
+// ============================================================
+const MS_CLIENT_ID = '86424a7d-30c2-48d8-a58b-46c58ecd2eac'; // <-- COLE O APPLICATION ID AQUI
+const ONEDRIVE_FILE = 'AgroCall_dados.json';
+// ============================================================
+
+let msalInstance = null;
+let currentUser = null;
+let odSyncTimer = null;
+
+function _getRedirectUri() {
+  // Pega a URL exata da página sem hash/query — deve bater com o Azure
+  return window.location.origin + window.location.pathname;
+}
+
+function initMSAL() {
+  if (MS_CLIENT_ID === 'SEU_CLIENT_ID_AQUI') {
+    document.getElementById('ms-setup-warn').style.display = 'block';
+    return false;
+  }
+  if (msalInstance) return true;
+  try {
+    msalInstance = new msal.PublicClientApplication({
+      auth: {
+        clientId: MS_CLIENT_ID,
+        authority: 'https://login.microsoftonline.com/common',
+        redirectUri: _getRedirectUri(),
+        navigateToLoginRequestUrl: false
+      },
+      cache: {
+        cacheLocation: 'localStorage',
+        storeAuthStateInCookie: true   // necessário para Safari/iOS
+      },
+      system: {
+        allowNativeBroker: false
+      }
+    });
+    return true;
+  } catch(e) {
+    console.error('MSAL init:', e);
+    return false;
+  }
+}
+
+// Processar resposta de redirect ao carregar a página
+async function handleMsalRedirect() {
+  if (!initMSAL()) return;
+  try {
+    const result = await msalInstance.handleRedirectPromise();
+    if (result && result.account) {
+      currentUser = {
+        nome: result.account.name || result.account.username,
+        email: result.account.username,
+        tipo: 'microsoft',
+        msAccount: result.account
+      };
+      await _finalizarLogin();
+      await sincronizarOneDrive('carregar');
+    }
+  } catch(e) {
+    console.error('MSAL redirect handle:', e);
+  }
+}
+
+async function loginMicrosoft() {
+  if (!initMSAL()) {
+    alert('Configure o MS_CLIENT_ID antes de usar o login Microsoft.\nVeja as instruções na tela.');
+    return;
+  }
+  const btn = document.getElementById('btn-ms-login');
+  btn.textContent = 'Redirecionando...';
+  btn.disabled = true;
+
+  try {
+    // loginRedirect funciona melhor no Netlify, GitHub Pages e celular
+    await msalInstance.loginRedirect({
+      scopes: ['User.Read', 'Files.ReadWrite'],
+      prompt: 'select_account',
+      redirectUri: _getRedirectUri()
+    });
+    // A página vai redirecionar — handleMsalRedirect() cuida do retorno
+  } catch(e) {
+    console.error('Login redirect error:', e);
+    // Fallback: tentar popup se redirect falhar
+    try {
+      const result = await msalInstance.loginPopup({
+        scopes: ['User.Read', 'Files.ReadWrite'],
+        prompt: 'select_account'
+      });
+      currentUser = {
+        nome: result.account.name || result.account.username,
+        email: result.account.username,
+        tipo: 'microsoft',
+        msAccount: result.account
+      };
+      await _finalizarLogin();
+      await sincronizarOneDrive('carregar');
+    } catch(e2) {
+      alert('Erro ao entrar: ' + (e2.message || e2.errorCode || 'Tente novamente'));
+      btn.innerHTML = `<svg class="ms-icon" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg> Entrar com Microsoft / OneDrive`;
+      btn.disabled = false;
+    }
+  }
+}
+
+async function getAccessToken() {
+  if (!msalInstance || !currentUser?.msAccount) return null;
+  try {
+    const r = await msalInstance.acquireTokenSilent({
+      scopes: ['Files.ReadWrite'],
+      account: currentUser.msAccount
+    });
+    return r.accessToken;
+  } catch(e) {
+    try {
+      const r = await msalInstance.acquireTokenPopup({
+        scopes: ['Files.ReadWrite'],
+        account: currentUser.msAccount
+      });
+      return r.accessToken;
+    } catch(e2) { return null; }
+  }
+}
+
+// ── OneDrive via Microsoft Graph API ────────────────────────
+async function sincronizarOneDrive(modo = 'salvar') {
+  if (currentUser?.tipo !== 'microsoft') return;
+  const token = await getAccessToken();
+  if (!token) return;
+
+  const syncEl = document.getElementById('syncLbl');
+
+  if (modo === 'salvar') {
+    syncEl.textContent = '↑ Salvando no OneDrive...';
+    syncEl.style.color = 'var(--amber)';
+    try {
+      const dados = JSON.stringify({ chamados, equipe, atualizado: new Date().toISOString() }, null, 2);
+      const blob = new Blob([dados], { type: 'application/json' });
+
+      // PUT direto no OneDrive pessoal — cria ou sobrescreve o arquivo
+      const res = await fetch(
+        `https://graph.microsoft.com/v1.0/me/drive/root:/AgroCall/${ONEDRIVE_FILE}:/content`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: blob
+        }
+      );
+
+      if (res.ok) {
+        const ts = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+        syncEl.textContent = `✓ OneDrive · ${ts}`;
+        syncEl.style.color = 'var(--verde)';
+        localStorage.setItem('agc', JSON.stringify({chamados, equipe}));
+      } else {
+        const err = await res.json();
+        console.error('OneDrive save error:', err);
+        syncEl.textContent = '⚠ Erro ao salvar';
+        syncEl.style.color = 'var(--red)';
+      }
+    } catch(e) {
+      console.error('OneDrive save exception:', e);
+      syncEl.textContent = '⚠ Sem conexão';
+      syncEl.style.color = 'var(--amber)';
+      localStorage.setItem('agc', JSON.stringify({chamados, equipe}));
+    }
+
+  } else if (modo === 'carregar') {
+    syncEl.textContent = '↓ Carregando OneDrive...';
+    syncEl.style.color = 'var(--amber)';
+    try {
+      const res = await fetch(
+        `https://graph.microsoft.com/v1.0/me/drive/root:/AgroCall/${ONEDRIVE_FILE}:/content`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+
+      if (res.ok) {
+        const dados = await res.json();
+        if (dados.chamados) {
+          // Mesclar: preferir dados do OneDrive (mais recentes)
+          chamados = dados.chamados;
+          equipe = dados.equipe || equipe;
+          localStorage.setItem('agc', JSON.stringify({chamados, equipe}));
+          render();
+        }
+        const ts = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+        syncEl.textContent = `✓ OneDrive · ${ts}`;
+        syncEl.style.color = 'var(--verde)';
+      } else if (res.status === 404) {
+        // Arquivo ainda não existe — é a primeira vez, salvar
+        syncEl.textContent = '↑ Criando arquivo no OneDrive...';
+        await sincronizarOneDrive('salvar');
+      } else {
+        syncEl.textContent = '⚠ Erro ao carregar';
+        syncEl.style.color = 'var(--red)';
+      }
+    } catch(e) {
+      syncEl.textContent = '⚠ Sem conexão — dados locais';
+      syncEl.style.color = 'var(--amber)';
+    }
+  }
+}
+
+function loginLocal() {
+  currentUser = { nome: 'Usuário local', email: '', tipo: 'local' };
+  _finalizarLogin();
+}
+
+function logout() {
+  if (odSyncTimer) clearInterval(odSyncTimer);
+  if (msalInstance && currentUser?.msAccount) {
+    try { msalInstance.logoutPopup({ account: currentUser.msAccount }); } catch(e) {}
+  }
+  currentUser = null;
+  msAccessToken = null;
+  localStorage.removeItem('agc_user');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+async function _finalizarLogin() {
+  localStorage.setItem('agc_user', JSON.stringify({
+    nome: currentUser.nome,
+    email: currentUser.email,
+    tipo: currentUser.tipo
+  }));
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+
+  const ini = currentUser.nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+  const odIcon = currentUser.tipo==='microsoft'
+    ? `<svg width="12" height="12" viewBox="0 0 23 23"><rect x="1" y="1" width="10" height="10" fill="#f25022"/><rect x="12" y="1" width="10" height="10" fill="#7fba00"/><rect x="1" y="12" width="10" height="10" fill="#00a4ef"/><rect x="12" y="12" width="10" height="10" fill="#ffb900"/></svg>`
+    : '';
+  document.getElementById('user-area').innerHTML = `
+    <div class="user-pill" title="${currentUser.email}">
+      <div class="user-av">${ini}</div>
+      <span>${currentUser.nome.split(' ')[0]}</span>
+      ${odIcon}
+    </div>
+    <button class="logout-btn" onclick="logout()" style="margin-left:2px">Sair</button>`;
+
+  // Sincronização automática a cada 2 minutos se Microsoft
+  if (currentUser.tipo === 'microsoft') {
+    if (odSyncTimer) clearInterval(odSyncTimer);
+    odSyncTimer = setInterval(() => sincronizarOneDrive('salvar'), 2 * 60 * 1000);
+    document.getElementById('syncLbl').textContent = '↻ OneDrive conectado';
+    document.getElementById('syncLbl').style.color = 'var(--verde)';
+  } else {
+    document.getElementById('syncLbl').textContent = '⬡ Modo local';
+    document.getElementById('syncLbl').style.color = '';
+  }
+  render();
+}
+
+// Ao carregar a página — processar redirect do Microsoft primeiro,
+// depois verificar sessão salva
+(async function init() {
+  // 1. Processar retorno do login Microsoft (redirect flow)
+  await handleMsalRedirect();
+
+  // 2. Se já logado via redirect, não precisa continuar
+  if (currentUser) return;
+
+  // 3. Verificar sessão salva no localStorage
+  const saved = localStorage.getItem('agc_user');
+  if (!saved) return;
+  try {
+    const u = JSON.parse(saved);
+    currentUser = u;
+    if (u.tipo === 'microsoft') {
+      // Tenta reautenticar silenciosamente
+      if (initMSAL()) {
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          currentUser.msAccount = accounts[0];
+          await _finalizarLogin();
+          await sincronizarOneDrive('carregar');
+          return;
+        }
+      }
+      // Token expirado ou sem conta — volta para login
+      localStorage.removeItem('agc_user');
+      return;
+    }
+    // Modo local
+    await _finalizarLogin();
+  } catch(e) { console.error('Session restore:', e); }
+})();
+
+// ============================================================
+// EXPORTAR PDF
+// ============================================================
+function exportarPDF() {
+  const fe = chamados.filter(c => c.status === 'fechado');
+  if (!fe.length) { alert('Nenhum chamado encerrado para exportar.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Cabeçalho
+  doc.setFillColor(29, 158, 117);
+  doc.rect(0, 0, 297, 22, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('AgroCall — Relatório de Histórico de Chamados', 14, 14);
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}${currentUser?' | Usuário: '+currentUser.nome:''}`, 14, 20);
+
+  // Estatísticas
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+  doc.text('Resumo', 14, 32);
+
+  const avgPar = Math.round(fe.reduce((s,c)=>s+Math.round((new Date(c.fechamento)-new Date(c.abertura))/60000),0)/fe.length);
+  const avgAt  = Math.round(fe.reduce((s,c)=>s+Math.round((new Date(c.fechamento)-new Date(c.assumidoEm||c.abertura))/60000),0)/fe.length);
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.text(`Total encerrados: ${fe.length}`, 14, 38);
+  doc.text(`Tempo médio de parada: ${avgPar} min`, 70, 38);
+  doc.text(`Tempo médio de atendimento: ${avgAt} min`, 140, 38);
+
+  // Tabela principal
+  const TN2={m:'Mecânico',e:'Eletrônico',c:'Climático',h:'Hidráulico'};
+  const PN={a:'Alta',m:'Média',b:'Baixa'};
+  const rows = fe.map(c => {
+    const parMin = Math.round((new Date(c.fechamento)-new Date(c.abertura))/60000);
+    const atMin  = Math.round((new Date(c.fechamento)-new Date(c.assumidoEm||c.abertura))/60000);
+    return [
+      c.id, c.equip, c.frota, TN2[c.tipoProb]||c.tipoProb, PN[c.prio]||c.prio,
+      c.tcNome, c.operador||'—', c.local||'—',
+      new Date(c.abertura).toLocaleString('pt-BR'),
+      new Date(c.fechamento).toLocaleString('pt-BR'),
+      parMin+'min', atMin+'min',
+      c.solucao||'—'
+    ];
+  });
+
+  doc.autoTable({
+    startY: 44,
+    head: [['ID','Equipamento','Frota','Problema','Prio.','Técnico','Operador','Local','Abertura','Fechamento','T. Parada','T. Atend.','Solução']],
+    body: rows,
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [29,158,117], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: [245, 248, 245] },
+    columnStyles: { 12: { cellWidth: 40 } },
+    margin: { left: 14, right: 14 },
+    didParseCell: (data) => {
+      if (data.section==='body' && data.column.index===4) {
+        const v=data.cell.raw;
+        if (v==='Alta') data.cell.styles.textColor=[162,29,29];
+        else if (v==='Média') data.cell.styles.textColor=[140,83,11];
+        else data.cell.styles.textColor=[15,110,86];
+      }
+    }
+  });
+
+  // Tabela por técnico
+  const tecMap = {};
+  fe.forEach(c => {
+    if (!tecMap[c.tcNome]) tecMap[c.tcNome]={qt:0,tot:0};
+    tecMap[c.tcNome].qt++;
+    tecMap[c.tcNome].tot += Math.round((new Date(c.fechamento)-new Date(c.assumidoEm||c.abertura))/60000);
+  });
+  const tecRows = Object.entries(tecMap).map(([nm,v]) => [nm, v.qt, Math.round(v.tot/v.qt)+'min', v.tot+'min']);
+
+  const y2 = doc.lastAutoTable.finalY + 10;
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(30,30,30);
+  doc.text('Desempenho por Técnico', 14, y2);
+  doc.autoTable({
+    startY: y2+4,
+    head: [['Técnico','Chamados atendidos','Tempo médio atend.','Tempo total']],
+    body: tecRows,
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [55,138,221], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [240,246,253] },
+    margin: { left: 14, right: 180 },
+  });
+
+  doc.save(`AgroCall_Historico_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+// ============================================================
+// GPS — Capturar localização atual
+// ============================================================
+let gpsCoords = null; // { lat, lon, accuracy, endereço }
+
+function capturarGPS() {
+  const btn   = document.getElementById('btn-gps');
+  const status= document.getElementById('gps-status');
+
+  if (!navigator.geolocation) {
+    _gpsStatus('❌ GPS não disponível neste dispositivo', 'var(--red)');
+    return;
+  }
+
+  // Estado: carregando
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="animation:spin 1s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> Buscando...`;
+  btn.disabled = true;
+  _gpsStatus('📡 Obtendo sinal GPS...', 'var(--amber)');
+
+  navigator.geolocation.getCurrentPosition(
+    pos => _gpsSuccess(pos),
+    err => _gpsError(err),
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function _gpsSuccess(pos) {
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+  const acc = Math.round(pos.coords.accuracy);
+  gpsCoords = { lat, lon, acc };
+
+  // Atualizar botão
+  const btn = document.getElementById('btn-gps');
+  btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> ✓`;
+  btn.disabled = false;
+  btn.style.background = 'var(--verde)';
+  btn.style.color = 'white';
+  btn.style.borderColor = 'var(--verde-dark)';
+
+  // Mostrar mapa via OpenStreetMap (sem API key)
+  const mapWrap = document.getElementById('gps-map-wrap');
+  const mapFrame = document.getElementById('gps-map');
+  const badge    = document.getElementById('gps-coords-badge');
+  mapWrap.style.display = 'block';
+  mapFrame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${lon-0.003},${lat-0.003},${lon+0.003},${lat+0.003}&layer=mapnik&marker=${lat},${lon}`;
+  badge.textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)} · ±${acc}m`;
+
+  // Reverse geocoding via Nominatim (gratuito, sem chave)
+  _gpsStatus('🔍 Identificando local...', 'var(--amber)');
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=pt-BR`)
+    .then(r => r.json())
+    .then(data => {
+      const addr = data.address || {};
+      // Montar descrição legível: bairro/município/estrada mais próxima
+      const partes = [
+        addr.road || addr.hamlet || addr.suburb,
+        addr.village || addr.town || addr.city || addr.county,
+        addr.state
+      ].filter(Boolean);
+      const desc = partes.slice(0,2).join(', ') || `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+
+      // Preencher campo de localização se estiver vazio
+      const campo = document.getElementById('n-lc');
+      if (!campo.value.trim()) campo.value = desc;
+
+      _gpsStatus(`📍 ${desc} · precisão ±${acc}m`, 'var(--verde-dark)');
+      gpsCoords.desc = desc;
+    })
+    .catch(() => {
+      // Fallback: usar coordenadas brutas
+      const desc = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+      const campo = document.getElementById('n-lc');
+      if (!campo.value.trim()) campo.value = desc;
+      _gpsStatus(`📍 Coordenadas: ${desc} · ±${acc}m`, 'var(--verde-dark)');
+    });
+}
+
+function _gpsError(err) {
+  const msgs = {
+    1: '❌ Permissão de GPS negada. Verifique as configurações do navegador.',
+    2: '❌ Sinal GPS indisponível. Tente ao ar livre.',
+    3: '⏱ GPS demorou muito. Tente novamente.'
+  };
+  _gpsStatus(msgs[err.code] || '❌ Erro ao obter localização', 'var(--red)');
+  const btn = document.getElementById('btn-gps');
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg> GPS`;
+  btn.disabled = false;
+}
+
+function _gpsStatus(msg, cor) {
+  const el = document.getElementById('gps-status');
+  el.style.display = 'flex';
+  el.style.color = cor || 'var(--muted)';
+  el.textContent = msg;
+}
+
+function limparGPS() {
+  gpsCoords = null;
+  document.getElementById('gps-map-wrap').style.display = 'none';
+  document.getElementById('gps-status').style.display = 'none';
+  document.getElementById('n-lc').value = '';
+  const btn = document.getElementById('btn-gps');
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg> GPS`;
+  btn.style.background = 'var(--verde-light)';
+  btn.style.color = 'var(--verde-dark)';
+  btn.style.borderColor = 'var(--verde)';
+}
+
+// Salvar coordenadas junto com o chamado — veja criarChamado() abaixo
+
+// ============================================================
+// CONFIGURAÇÃO FIREBASE — Substitua pelas suas credenciais reais
+// Crie um projeto em https://console.firebase.google.com
+// e habilite o Realtime Database
+// ============================================================
+const FB_CONFIG = {
+  apiKey: "COLE_SUA_API_KEY_AQUI",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+  projectId: "SEU_PROJETO"
+};
+// ============================================================
+
+let db = null, fbOnline = false;
+try {
+  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+  db = firebase.database();
+  db.ref('.info/connected').on('value', s => {
+    fbOnline = !!s.val();
+    document.getElementById('syncLbl').textContent = fbOnline ? '↻ Firebase online' : '↻ Modo local';
+  });
+  db.ref('chamados').on('value', s => {
+    if (s.val()) { chamados = Object.values(s.val()); render(); }
+  });
+  db.ref('equipe').on('value', s => {
+    if (s.val()) { equipe = Object.values(s.val()); renderEq(); }
+  });
+} catch(e) {
+  document.getElementById('syncLbl').textContent = '⬡ Modo local';
+}
+
+function save() {
+  localStorage.setItem('agc', JSON.stringify({chamados, equipe}));
+  // Firebase
+  if (db && fbOnline) {
+    try {
+      const ch = {}; chamados.forEach(c => ch[c.id] = c);
+      const eq = {}; equipe.forEach(m => eq[m.id] = m);
+      db.ref('chamados').set(ch);
+      db.ref('equipe').set(eq);
+    } catch(e) {}
+  }
+  // OneDrive — debounce 3s para não spammar a API
+  if (currentUser?.tipo === 'microsoft') {
+    clearTimeout(save._odTimer);
+    save._odTimer = setTimeout(() => sincronizarOneDrive('salvar'), 3000);
+  }
+}
+
+let _raw = JSON.parse(localStorage.getItem('agc') || '{}');
+let chamados = _raw.chamados || [];
+let equipe = _raw.equipe || [];
+let tpSel='', prSel='', ativo=null, dtInt=null;
+
+if (!equipe.length) {
+  equipe = [
+    {id:'e1',nome:'Carlos Souza',cargo:'Técnico mecânico',tel:'(17) 99001-1234'},
+    {id:'e2',nome:'Marcos Lima',cargo:'Técnico eletrônico',tel:'(17) 99002-2345'},
+    {id:'e3',nome:'Ana Paula Ramos',cargo:'Supervisora de campo',tel:'(17) 99003-3456'},
+    {id:'e4',nome:'João Ferreira',cargo:'Técnico hidráulico',tel:'(17) 99004-4567'},
+    {id:'e5',nome:'Roberto Dias',cargo:'Operador de colhedora',tel:'(17) 99005-5678'},
+  ];
+  save();
+}
+
+// Dados demo para gráficos (só insere se ainda não há histórico)
+if (!chamados.length) {
+  const now = Date.now();
+  const mkISO = (msAgo) => new Date(now - msAgo).toISOString();
+  const demo = [
+    {id:'CH0001',frota:'COL-01',equip:'Colhedora',tipoProb:'m',prio:'a',operador:'José Alves',local:'Talhão 2A',desc:'Problema na correia do molinete, barulho excessivo',tcId:'e1',tcNome:'Carlos Souza',status:'fechado',abertura:mkISO(5*3600000),assumidoEm:mkISO(4.5*3600000),fechamento:mkISO(3.5*3600000),solucao:'Substituída correia do molinete',previsao:null},
+    {id:'CH0002',frota:'TRB-03',equip:'Transbordo',tipoProb:'h',prio:'m',operador:'Paulo Melo',local:'Gleba Norte',desc:'Vazamento no cilindro hidráulico da caçamba',tcId:'e4',tcNome:'João Ferreira',status:'fechado',abertura:mkISO(10*3600000),assumidoEm:mkISO(9.2*3600000),fechamento:mkISO(8*3600000),solucao:'Vedação substituída',previsao:null},
+    {id:'CH0003',frota:'TR-07',equip:'Trator cultural',tipoProb:'e',prio:'b',operador:'Renato Costa',local:'Talhão 4B',desc:'Painel de instrumentos apagando intermitentemente',tcId:'e2',tcNome:'Marcos Lima',status:'fechado',abertura:mkISO(26*3600000),assumidoEm:mkISO(25*3600000),fechamento:mkISO(24.2*3600000),solucao:'Conector do painel refeito',previsao:null},
+    {id:'CH0004',frota:'COL-02',equip:'Colhedora',tipoProb:'m',prio:'a',operador:'Fábio Nunes',local:'Gleba Sul',desc:'Quebrou pino da plataforma de corte',tcId:'e1',tcNome:'Carlos Souza',status:'fechado',abertura:mkISO(48*3600000),assumidoEm:mkISO(47*3600000),fechamento:mkISO(45.5*3600000),solucao:'Pino substituído e regulagem feita',previsao:null},
+    {id:'CH0005',frota:'TRB-01',equip:'Transbordo',tipoProb:'c',prio:'b',operador:'Leandro Souza',local:'Talhão 1C',desc:'Operação interrompida por chuva intensa',tcId:'e3',tcNome:'Ana Paula Ramos',status:'fechado',abertura:mkISO(72*3600000),assumidoEm:mkISO(72*3600000),fechamento:mkISO(70*3600000),solucao:'Aguardou janela de clima e retomou',previsao:null},
+    {id:'CH0006',frota:'TR-12',equip:'Trator cultural',tipoProb:'h',prio:'m',operador:'Márcio Lima',local:'Gleba Leste',desc:'Direção hidráulica pesada, falta de servo',tcId:'e4',tcNome:'João Ferreira',status:'fechado',abertura:mkISO(36*3600000),assumidoEm:mkISO(35*3600000),fechamento:mkISO(33.5*3600000),solucao:'Bomba hidráulica reconstituída',previsao:null},
+    {id:'CH0007',frota:'COL-01',equip:'Colhedora',tipoProb:'e',prio:'a',operador:'José Alves',local:'Talhão 2A',desc:'Sensor de nível de grãos com falha (código E42)',tcId:'e2',tcNome:'Marcos Lima',status:'fechado',abertura:mkISO(100*3600000),assumidoEm:mkISO(99*3600000),fechamento:mkISO(98.5*3600000),solucao:'Sensor substituído e calibrado',previsao:null},
+  ];
+  chamados = demo;
+  save();
+}
+
+function goTab(nm, i) {
+  document.querySelectorAll('.tab').forEach((b,j) => b.classList.toggle('on', j===i));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('panel-'+nm).classList.add('on');
+  render();
+  if (nm==='hi') setTimeout(renderCharts, 80);
+}
+
+function openModal(id) {
+  if (id==='nv') {
+    document.getElementById('n-dt').value = new Date().toLocaleString('pt-BR');
+    document.getElementById('n-pv').value = new Date(Date.now()+2*3600000).toISOString().slice(0,16);
+    tpSel=''; prSel='';
+    ['m','e','c','h'].forEach(x => document.getElementById('tb-'+x).className='tbtn');
+    ['a','m','b'].forEach(x => document.getElementById('pb-'+x).className='pbtn');
+    ['n-fr','n-op','n-lc','n-ds'].forEach(x => document.getElementById(x).value='');
+    document.getElementById('n-eq').value='';
+    document.getElementById('n-tc').innerHTML = '<option value="">Sem atribuição</option>' +
+      equipe.map(m=>`<option value="${m.id}">${m.nome} — ${m.cargo}</option>`).join('');
+    // Reset GPS
+    limparGPS();
+  }
+  document.getElementById('ov-'+id).style.display='flex';
+}
+
+function closeModal(id) {
+  document.getElementById('ov-'+id).style.display='none';
+  if (id==='dt' && dtInt) { clearInterval(dtInt); dtInt=null; }
+}
+
+function selTp(t) {
+  tpSel=t;
+  const map={m:'sm',e:'se',c:'sc',h:'sh'};
+  ['m','e','c','h'].forEach(x => document.getElementById('tb-'+x).className='tbtn'+(x===t?' '+map[x]:''));
+}
+
+function selPr(p) {
+  prSel=p;
+  const map={a:'pa',m:'pm',b:'pb'};
+  ['a','m','b'].forEach(x => document.getElementById('pb-'+x).className='pbtn'+(x===p?' '+map[x]:''));
+}
+
+function criarChamado() {
+  const fr=document.getElementById('n-fr').value.trim();
+  const eq=document.getElementById('n-eq').value;
+  const ds=document.getElementById('n-ds').value.trim();
+  if (!fr||!eq||!tpSel||!prSel||!ds) { alert('Preencha: frota, tipo de equipamento, tipo de problema, prioridade e descrição.'); return; }
+  const tcId=document.getElementById('n-tc').value;
+  const tc=equipe.find(m=>m.id===tcId);
+  const c={
+    id:'CH'+String(chamados.length+1).padStart(4,'0'),
+    frota:fr, equip:eq, tipoProb:tpSel, prio:prSel,
+    operador:document.getElementById('n-op').value.trim(),
+    local:document.getElementById('n-lc').value.trim(),
+    // Salvar coordenadas GPS se capturadas
+    gps: gpsCoords ? { lat:gpsCoords.lat, lon:gpsCoords.lon, acc:gpsCoords.acc, desc:gpsCoords.desc||'' } : null,
+    desc:ds, tcId, tcNome:tc?tc.nome:'Não atribuído',
+    status:'aberto', abertura:new Date().toISOString(),
+    previsao:document.getElementById('n-pv').value||null,
+    solucao:'', fechamento:null, assumidoEm:null
+  };
+  chamados.unshift(c);
+  gpsCoords = null;
+  save(); closeModal('nv'); render();
+}
+
+function verDetalhe(id) {
+  const c=chamados.find(x=>x.id===id);
+  if (!c) return;
+  ativo=c;
+  const tn={m:'Mecânico',e:'Eletrônico',c:'Climático',h:'Hidráulico'}[c.tipoProb]||c.tipoProb;
+  const sn={aberto:'Aberto',andamento:'Em andamento',fechado:'Fechado'}[c.status];
+  const sc={aberto:'ba',andamento:'band',fechado:'bf'}[c.status];
+  document.getElementById('dt-tit').innerHTML=`${c.id} — ${c.frota} <span class="badge ${sc}" style="font-size:12px;margin-left:8px">${sn}</span>`;
+  document.getElementById('dt-inf').innerHTML=`
+    <div><div class="dl">Equipamento</div><div class="dv">${c.equip}</div></div>
+    <div><div class="dl">Frota</div><div class="dv">${c.frota}</div></div>
+    <div><div class="dl">Tipo de problema</div><div class="dv">${tn}</div></div>
+    <div><div class="dl">Prioridade</div><div class="dv"><span class="badge b${c.prio}">${{a:'Alta',m:'Média',b:'Baixa'}[c.prio]}</span></div></div>
+    <div><div class="dl">Operador</div><div class="dv">${c.operador||'—'}</div></div>
+    <div><div class="dl">Local</div><div class="dv">${c.local||'—'}${c.gps?` <a href="https://www.google.com/maps?q=${c.gps.lat},${c.gps.lon}" target="_blank" style="font-size:11px;color:var(--blue);margin-left:4px">📍 Ver no mapa</a>`:''}</div></div>
+    <div><div class="dl">Técnico</div><div class="dv">${c.tcNome}</div></div>
+    <div><div class="dl">Abertura</div><div class="dv">${new Date(c.abertura).toLocaleString('pt-BR')}</div></div>
+    ${c.previsao?`<div><div class="dl">Previsão liberação</div><div class="dv">${new Date(c.previsao).toLocaleString('pt-BR')}</div></div>`:''}
+    ${c.fechamento?`<div><div class="dl">Fechamento</div><div class="dv">${new Date(c.fechamento).toLocaleString('pt-BR')}</div></div>`:''}
+    ${c.solucao?`<div style="grid-column:1/-1"><div class="dl">Solução</div><div class="dv">${c.solucao}</div></div>`:''}
+  `;
+  document.getElementById('dt-desc').textContent=c.desc;
+  document.getElementById('dt-sol').value=c.solucao||'';
+  document.getElementById('btn-ass').style.display=c.status==='aberto'?'inline-flex':'none';
+  document.getElementById('btn-enc').style.display=c.status==='andamento'?'inline-flex':'none';
+  document.getElementById('sol-area').style.display=c.status!=='fechado'?'block':'none';
+  if (dtInt) clearInterval(dtInt);
+  const tEl=document.getElementById('dt-tmr');
+  if (c.status!=='fechado') {
+    tEl.style.color='var(--red)';
+    const tick=()=>{ const d=Math.floor((Date.now()-new Date(c.assumidoEm||c.abertura))/1000); tEl.textContent=fmtT(d); };
+    tick(); dtInt=setInterval(tick,1000);
+  } else {
+    tEl.style.color='var(--verde)';
+    tEl.textContent=fmtT(Math.floor((new Date(c.fechamento)-new Date(c.abertura))/1000))+' (total)';
+  }
+  openModal('dt');
+}
+
+function fmtT(s){ return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+function assumir() {
+  if (!ativo) return;
+  const i=chamados.findIndex(x=>x.id===ativo.id);
+  chamados[i].status='andamento'; chamados[i].assumidoEm=new Date().toISOString();
+  ativo=chamados[i]; save(); closeModal('dt'); render();
+}
+
+function encerrar() {
+  if (!ativo) return;
+  const sol=document.getElementById('dt-sol').value.trim();
+  if (!sol) { alert('Descreva a solução antes de encerrar.'); return; }
+  const i=chamados.findIndex(x=>x.id===ativo.id);
+  chamados[i].status='fechado'; chamados[i].solucao=sol; chamados[i].fechamento=new Date().toISOString();
+  save(); closeModal('dt'); render();
+}
+
+function addMembro() {
+  const nm=document.getElementById('m-nm').value.trim();
+  if (!nm) { alert('Informe o nome.'); return; }
+  if (equipe.length>=100) { alert('Limite de 100 membros atingido.'); return; }
+  equipe.push({id:'e'+Date.now(),nome:nm,cargo:document.getElementById('m-cg').value,tel:document.getElementById('m-tl').value.trim()});
+  save(); closeModal('mb');
+  document.getElementById('m-nm').value=''; document.getElementById('m-tl').value='';
+  renderEq();
+}
+
+const TN={m:'Mecânico',e:'Eletrônico',c:'Climático',h:'Hidráulico'};
+const TC={m:'bm',e:'be',c:'bc',h:'bh'};
+function elap(iso,end){
+  const d=Math.floor(((end?new Date(end):Date.now())-new Date(iso))/60000);
+  return d<60?d+'min':Math.floor(d/60)+'h'+String(d%60).padStart(2,'0')+'min';
+}
+
+function cHTML(c,btn=true){
+  const urg=c.prio==='a'&&c.status!=='fechado';
+  const prNm={a:'Alta',m:'Média',b:'Baixa'}[c.prio];
+  const prCl={a:'balt',m:'bmed',b:'bbai'}[c.prio];
+  const stNm={aberto:'Aberto',andamento:'Em andamento',fechado:'Fechado'}[c.status];
+  const stCl={aberto:'ba',andamento:'band',fechado:'bf'}[c.status];
+  return `<div class="ccard${urg?' urg':''}">
+    <div class="cc-top">
+      <div class="cc-frota">${c.id} — ${c.frota} <span style="font-weight:400;font-size:13px;color:var(--muted)">${c.equip}</span></div>
+      <div class="cc-bgs">
+        <span class="badge ${TC[c.tipoProb]||'bm'}">${TN[c.tipoProb]||c.tipoProb}</span>
+        <span class="badge ${prCl}">${prNm}</span>
+        <span class="badge ${stCl}">${stNm}</span>
+      </div>
+    </div>
+    <div class="cc-desc">${c.desc}</div>
+    <div class="cc-meta">
+      <span>&#128100; ${c.tcNome}</span>
+      ${c.local?`<span>&#128205; ${c.local}</span>`:''}
+      <span>&#128337; ${new Date(c.abertura).toLocaleString('pt-BR')}</span>
+      ${c.previsao?`<span>&#9200; ${new Date(c.previsao).toLocaleString('pt-BR')}</span>`:''}
+    </div>
+    <div class="cc-ft">
+      ${c.status!=='fechado'
+        ?`<div class="timer-live"><span class="dot"></span>Parado há ${elap(c.assumidoEm||c.abertura)}</div>`
+        :`<span style="font-size:12px;color:var(--verde);font-weight:600">✓ Encerrado | Duração: ${elap(c.abertura,c.fechamento)}</span>`}
+      ${btn?`<button class="btn btn-sm" onclick="verDetalhe('${c.id}')">Ver detalhes</button>`:''}
+    </div>
+  </div>`;
+}
+
+// ============ GRÁFICOS ============
+let chartBarras=null, chartPizza=null, chartTec=null, chartTipo=null;
+let chartMode='parada';
+
+const CHART_COLORS = ['#1D9E75','#378ADD','#BA7517','#E24B4A','#9B59B6','#16A085','#E67E22','#2980B9','#27AE60','#C0392B'];
+
+function setChartMode(m) {
+  chartMode=m;
+  document.getElementById('btn-chart-par').style.background = m==='parada' ? '#FCEBEB' : '';
+  document.getElementById('btn-chart-par').style.color = m==='parada' ? '#A32D2D' : '';
+  document.getElementById('btn-chart-par').style.borderColor = m==='parada' ? '#E24B4A' : '';
+  document.getElementById('btn-chart-at').style.background = m==='atendimento' ? '#E6F1FB' : '';
+  document.getElementById('btn-chart-at').style.color = m==='atendimento' ? '#185FA5' : '';
+  document.getElementById('btn-chart-at').style.borderColor = m==='atendimento' ? '#378ADD' : '';
+  renderCharts();
+}
+
+function minDiff(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 60000);
+}
+
+function renderCharts() {
+  const fe = chamados.filter(c => c.status === 'fechado');
+  if (!fe.length) return;
+
+  // --- Stats ---
+  const totalPar = fe.map(c => minDiff(c.abertura, c.fechamento));
+  const totalAt  = fe.map(c => c.assumidoEm ? minDiff(c.assumidoEm, c.fechamento) : minDiff(c.abertura, c.fechamento));
+  document.getElementById('hi-total').textContent = fe.length;
+  document.getElementById('hi-avgpar').textContent = Math.round(totalPar.reduce((a,b)=>a+b,0)/fe.length);
+  document.getElementById('hi-avgat').textContent  = Math.round(totalAt.reduce((a,b)=>a+b,0)/fe.length);
+
+  // --- Barras: tempo por chamado ---
+  const labels = fe.slice(0,15).map(c => c.id + ' ' + c.frota);
+  const dataBar = fe.slice(0,15).map((c,i) =>
+    chartMode==='parada' ? totalPar[i] : totalAt[i]
+  );
+  const barColor = chartMode==='parada' ? '#E24B4A' : '#378ADD';
+  const barLight = chartMode==='parada' ? 'rgba(226,75,74,.15)' : 'rgba(55,138,221,.15)';
+
+  const ctxBar = document.getElementById('chart-barras').getContext('2d');
+  if (chartBarras) chartBarras.destroy();
+  chartBarras = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: chartMode==='parada' ? 'Tempo parado (min)' : 'Tempo atendimento (min)',
+        data: dataBar,
+        backgroundColor: barLight,
+        borderColor: barColor,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} min` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } },
+        y: { grid: { color: '#f0efe9' }, ticks: { font: { size: 11 }, callback: v => v+'min' } }
+      }
+    }
+  });
+
+  // --- Pizza: chamados por técnico ---
+  const tecCount = {};
+  fe.forEach(c => { tecCount[c.tcNome] = (tecCount[c.tcNome]||0) + 1; });
+  const tecNomes = Object.keys(tecCount);
+  const tecQtd   = tecNomes.map(n => tecCount[n]);
+
+  const ctxPizza = document.getElementById('chart-pizza').getContext('2d');
+  if (chartPizza) chartPizza.destroy();
+  chartPizza = new Chart(ctxPizza, {
+    type: 'doughnut',
+    data: {
+      labels: tecNomes,
+      datasets: [{ data: tecQtd, backgroundColor: CHART_COLORS.slice(0, tecNomes.length), borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} chamados` } }
+      }
+    }
+  });
+
+  // --- Barras horizontais: tempo médio por técnico ---
+  const tecTempos = {};
+  const tecCont   = {};
+  fe.forEach((c, i) => {
+    if (!tecTempos[c.tcNome]) { tecTempos[c.tcNome]=0; tecCont[c.tcNome]=0; }
+    tecTempos[c.tcNome] += totalAt[i];
+    tecCont[c.tcNome]++;
+  });
+  const tecNomesT = Object.keys(tecTempos);
+  const tecAvg    = tecNomesT.map(n => Math.round(tecTempos[n] / tecCont[n]));
+
+  const ctxTec = document.getElementById('chart-tec').getContext('2d');
+  if (chartTec) chartTec.destroy();
+  chartTec = new Chart(ctxTec, {
+    type: 'bar',
+    data: {
+      labels: tecNomesT,
+      datasets: [{
+        label: 'Tempo médio (min)',
+        data: tecAvg,
+        backgroundColor: 'rgba(29,158,117,.2)',
+        borderColor: '#1D9E75',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} min` } }
+      },
+      scales: {
+        x: { grid: { color: '#f0efe9' }, ticks: { font: { size: 11 }, callback: v => v+'min' } },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // --- Barras agrupadas: tipo de problema × tempo médio parada ---
+  const tipoMap = { m:'Mecânico', e:'Eletrônico', c:'Climático', h:'Hidráulico' };
+  const tipoTempos = {}; const tipoCont = {};
+  fe.forEach((c,i) => {
+    const k = tipoMap[c.tipoProb] || c.tipoProb;
+    if (!tipoTempos[k]) { tipoTempos[k]=0; tipoCont[k]=0; }
+    tipoTempos[k] += totalPar[i];
+    tipoCont[k]++;
+  });
+  const tipoNomes = Object.keys(tipoTempos);
+  const tipoAvg   = tipoNomes.map(n => Math.round(tipoTempos[n]/tipoCont[n]));
+  const tipoCores = { 'Mecânico':'rgba(186,117,23,.2)', 'Eletrônico':'rgba(55,138,221,.2)', 'Climático':'rgba(29,158,117,.2)', 'Hidráulico':'rgba(153,91,225,.2)' };
+  const tipoBord  = { 'Mecânico':'#BA7517', 'Eletrônico':'#378ADD', 'Climático':'#1D9E75', 'Hidráulico':'#9B59B6' };
+
+  const ctxTipo = document.getElementById('chart-tipo').getContext('2d');
+  if (chartTipo) chartTipo.destroy();
+  chartTipo = new Chart(ctxTipo, {
+    type: 'bar',
+    data: {
+      labels: tipoNomes,
+      datasets: [{
+        label: 'Tempo médio parado (min)',
+        data: tipoAvg,
+        backgroundColor: tipoNomes.map(n => tipoCores[n]||'rgba(136,135,128,.2)'),
+        borderColor:      tipoNomes.map(n => tipoBord[n]||'#888780'),
+        borderWidth: 2, borderRadius: 8, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} min` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+        y: { grid: { color: '#f0efe9' }, ticks: { font: { size: 11 }, callback: v => v+'min' } }
+      }
+    }
+  });
+}
+
+function render(){
+  const ab=chamados.filter(c=>c.status==='aberto');
+  const an=chamados.filter(c=>c.status==='andamento');
+  const fe=chamados.filter(c=>c.status==='fechado');
+  const hj=fe.filter(c=>new Date(c.fechamento).toDateString()===new Date().toDateString());
+  document.getElementById('s-a').textContent=ab.length;
+  document.getElementById('s-n').textContent=an.length;
+  document.getElementById('s-f').textContent=hj.length;
+  document.getElementById('cnt-a').textContent=ab.length||'';
+  document.getElementById('cnt-n').textContent=an.length||'';
+  if (fe.length) {
+    const avg=fe.reduce((s,c)=>s+Math.floor((new Date(c.fechamento)-new Date(c.abertura))/60000),0)/fe.length;
+    document.getElementById('s-t').textContent=Math.round(avg);
+  }
+  const empty=m=>`<div class="empty"><div style="font-size:40px;margin-bottom:8px">📋</div><p>${m}</p></div>`;
+  document.getElementById('d-list').innerHTML=chamados.length?chamados.slice(0,6).map(c=>cHTML(c)).join(''):empty('Nenhum chamado registrado.');
+  document.getElementById('l-ab').innerHTML=ab.length?ab.map(c=>cHTML(c)).join(''):empty('Nenhum chamado aberto no momento.');
+  document.getElementById('l-an').innerHTML=an.length?an.map(c=>cHTML(c)).join(''):empty('Nenhum chamado em andamento.');
+  document.getElementById('l-hi').innerHTML=fe.length?fe.map(c=>cHTML(c,false)).join(''):'<div style="padding:1rem;color:var(--muted)">Nenhum chamado encerrado ainda.</div>';
+  // render charts if historico tab active
+  setTimeout(()=>{ if(document.getElementById('panel-hi').classList.contains('on')) renderCharts(); }, 50);
+  renderEq();
+}
+
+function renderEq(){
+  const q=(document.getElementById('eq-s')||{value:''}).value.toLowerCase();
+  const fl=q?equipe.filter(m=>m.nome.toLowerCase().includes(q)||m.cargo.toLowerCase().includes(q)):equipe;
+  document.getElementById('eq-grid').innerHTML=fl.map(m=>{
+    const ini=m.nome.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="mcard"><div class="av">${ini}</div><div><div class="mn">${m.nome}</div><div class="mc">${m.cargo}</div>${m.tel?`<div class="mt">${m.tel}</div>`:''}</div></div>`;
+  }).join('')||'<div style="color:var(--muted);padding:1rem;font-size:13px">Nenhum membro encontrado.</div>';
+  const el=document.getElementById('eq-ct');
+  if (el) el.textContent=`${equipe.length}/100`;
+}
+
+render();
+setInterval(render, 15000);
+</script>
+
+<!-- Banner instalar Android/Chrome -->
+<div id="install-banner">
+  <div class="ib-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div>
+  <div class="ib-text">
+    <div class="ib-title">Instalar AgroCall</div>
+    <div class="ib-sub">Adicionar à tela inicial</div>
+  </div>
+  <button class="ib-btn" onclick="instalarPWA()">Instalar</button>
+  <button class="ib-x" onclick="fecharBanner()">&times;</button>
+</div>
+
+<!-- Dica iOS -->
+<div id="ios-hint">
+  <button class="ih-x" onclick="document.getElementById('ios-hint').classList.remove('show')">&times;</button>
+  Para instalar o <strong>AgroCall</strong> no iPhone:<br>
+  Toque em <strong>Compartilhar</strong> &#10138; depois em<br>
+  <strong>"Adicionar à Tela de Início"</strong> &#43;
+</div>
+
+<script>
+// ===== PWA: Service Worker + Install =====
+let deferredPrompt = null;
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('show');
+  deferredPrompt = null;
+});
+
+function instalarPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+  });
+}
+
+function fecharBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+  sessionStorage.setItem('banner_dismissed','1');
+}
+
+// Detectar iOS e mostrar dica (só 1x por sessão)
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone === true;
+if (isIOS && !isStandalone && !sessionStorage.getItem('ios_hint_shown')) {
+  setTimeout(() => {
+    document.getElementById('ios-hint').classList.add('show');
+    sessionStorage.setItem('ios_hint_shown','1');
+  }, 2500);
+}
+</script>
+</body>
+</html>
